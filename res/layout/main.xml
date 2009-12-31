@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    >
+	<LinearLayout
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:orientation="horizontal"
+	    >
+		<TextView  
+		    android:layout_width="wrap_content" 
+		    android:layout_height="wrap_content" 
+		    android:text="@string/twitter"
+	    />
+	    <CheckBox 
+	    	android:id="@+id/enable"
+	    	android:layout_width="wrap_content"
+	    	android:layout_height="wrap_content"
+	    />
+	</LinearLayout>
+	<TextView
+		android:id="@+id/last"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:lines="3"
+		android:hint="@string/type"
+	/>
+	<LinearLayout android:id="@+id/edit_group"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:orientation="vertical"
+		android:enabled="false"
+	>
+		<TextView
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:text="@string/label"
+		/>
+		<EditText android:id="@+id/editor"
+			android:layout_width="fill_parent"
+			android:layout_height="wrap_content"
+			android:lines="3"
+			android:hint="@string/tweet"
+		/>
+		<Button android:id="@+id/post"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="@string/post"
+		/>
+	</LinearLayout>
+</LinearLayout>
