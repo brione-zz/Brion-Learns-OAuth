@@ -181,16 +181,12 @@ public class BrionLearnsOAuth extends Activity implements OnCheckedChangeListene
 				Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
 				this.startActivity(i);
 			} catch (OAuthMessageSignerException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (OAuthNotAuthorizedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (OAuthExpectationFailedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (OAuthCommunicationException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
  		} else {
@@ -214,19 +210,8 @@ public class BrionLearnsOAuth extends Activity implements OnCheckedChangeListene
         return params; 
     }
     
-    private static final boolean USE_JSON = true;
-    
 	@Override
 	public void onClick(View v) {
-		
-		if(USE_JSON)
-			onClickJSON(v);
-		else
-			onClickXML(v);
-	}
-
-
-	public void onClickJSON(View v) {
 		try {
 			String response;
 			HttpContext c = new BasicHttpContext();
@@ -273,53 +258,6 @@ public class BrionLearnsOAuth extends Activity implements OnCheckedChangeListene
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (JSONException e) {
-			e.printStackTrace();
-		} finally {
-			
-		}
-	}
-	
-	public void onClickXML(View v) {
-		try {
-			String response;
-			HttpContext c = new BasicHttpContext();
-			// First let's verify our credentials
-			HttpGet get = new HttpGet("http://twitter.com/account/verify_credentials.xml");
-			mConsumer.sign(get);
-	        response = mClient.execute(get, new BasicResponseHandler(), c);
-	        Log.d(TAG, "Credentials: " + response);
-			
-			// create a request that requires authentication
-	        HttpPost post = new HttpPost("http://twitter.com/statuses/update.xml");
-	        LinkedList<BasicNameValuePair> out = new LinkedList<BasicNameValuePair>();
-	        // 'status' here is the update value you collect from UI
-	        out.add(new BasicNameValuePair("status", mEditor.getText().toString()));
-	        HttpEntity e = new UrlEncodedFormEntity(out, HTTP.UTF_8);
-			post.setEntity(e);
-	        post.setParams(this.getParams());
-	        
-	        // sign the request
-			mConsumer.sign(post);
-			Log.d(TAG, "Post: " + post.toString());
-			Log.d(TAG, "Post Entity: " + post.getEntity().toString());
-			
-	        // send the request
-			// HttpContext c = new BasicHttpContext();
-	        response = mClient.execute(post, new BasicResponseHandler(), c);
-	        
-	        Log.d(TAG, "Response: " + response);
-	        
-	        mEditor.setText("");
-	        
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (OAuthMessageSignerException e) {
-			e.printStackTrace();
-		} catch (OAuthExpectationFailedException e) {
-			e.printStackTrace();
-		} catch (ClientProtocolException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
 			e.printStackTrace();
 		} finally {
 			
