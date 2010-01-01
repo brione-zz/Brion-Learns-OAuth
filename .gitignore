@@ -2,4 +2,5 @@ gen
 bin
 .classpath
 .project
+src/com/eyebrowsoftware/bloa/Keys.java
 

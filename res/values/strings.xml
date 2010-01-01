@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="twitter">Logged In?</string>
-    <string name="app_name">Brion Learns OAuth</string>
+    <string name="app_name">BLOA</string>
     <string name="tweet">Enter your Tweet here</string>
     <string name="label"><b>Tweet Away</b></string>
     <string name="post"><b>Post</b></string>
