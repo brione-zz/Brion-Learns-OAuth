@@ -1,0 +1,5 @@
+This is an example of using the Signpost OAuth library in and Android application. It provides the 
+basics of authentication via the Twitter OAuth service, then allows the student to enter Twitter 
+messages into their Tweet stream.
+
+This software is intended for educational purposes and is not intended to be a complete implementation.

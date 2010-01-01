@@ -1,4 +1,4 @@
-package com.eyebrowsoftware.bloa;
+package com.example.bloa;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
