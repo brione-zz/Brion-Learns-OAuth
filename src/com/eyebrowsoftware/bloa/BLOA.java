@@ -49,7 +49,7 @@ import android.widget.TextView;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 
 public class BLOA extends Activity implements OnCheckedChangeListener, OnClickListener {
-	public static final String TAG = "BrionLearnsOAuth";
+	public static final String TAG = "BLOA";
 
 	public static final String TWITTER_REQUEST_TOKEN_URL = "http://twitter.com/oauth/request_token";
 	public static final String TWITTER_ACCESS_TOKEN_URL = "http://twitter.com/oauth/access_token";
