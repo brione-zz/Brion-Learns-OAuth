@@ -1,14 +1,11 @@
-This is an example of using the Signpost OAuth library in and Android application. It provides the 
-basics of authentication via the Twitter OAuth service, then allows the student to enter Twitter 
-messages into their Tweet stream.
+This is an example of using the Signpost OAuth library in and Android application. It provides the basics of authentication via the Twitter OAuth service, then allows the student to enter Twitter messages into their Tweet stream.
+
+You have to register your application with Twitter to get the Consumer Key and Secret (see below).
+
+Don't put your application's real callback address into the Callback field on the registration. You have to use another address that is a real http address and it does not appear that it is allowed to be a virtual Url like what is used in the AndroidManifest.xml java to kick off the BLOA Activity.
+package com.example.bloa;
 
 You will need to supply a Keys.java class that looks something like this:
-
-// You have to register your application with Twitter to get the Consumer Key and Secret (see below)
-// Don't put your application's real callback address into the Callback field on the registration. You have to use 
-// another address that is "real", and can't be a virtual Url, like what is used in the AndroidManifest.xml java to 
-// kick off the BLOA Activity.
-package com.example.bloa;
 
 public class Keys {
 	public static final String TWITTER_CONSUMER_KEY = "Your Consumer Key";
