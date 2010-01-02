@@ -67,8 +67,8 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
 	private CheckBox mCB;
 	private EditText mEditor;
 	private Button mButton;
-	private LinearLayout mEditGroup;
 	private TextView mDisplay;
+	private TextView mUser;
 	
 	private static final String TOKEN_STRING = "token";
 	private static final String SECRET_STRING = "secret";
@@ -83,9 +83,8 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
         mCB.setChecked(false);
         mEditor = (EditText) this.findViewById(R.id.editor);
         mButton = (Button) this.findViewById(R.id.post);
-        mEditGroup = (LinearLayout) this.findViewById(R.id.edit_group);
-        mEditGroup.setEnabled(false);
         mDisplay = (TextView) this.findViewById(R.id.last);
+        mUser = (TextView) this.findViewById(R.id.user);
         
         if(savedInstanceState != null) {
         	mConsumer = (OAuthConsumer) savedInstanceState.getSerializable("consumer");
@@ -104,20 +103,24 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
 	        		SignatureMethod.HMAC_SHA1);
 	 	    
 	        SharedPreferences settings = this.getSharedPreferences(PREFS, 0);
-	 	    if(settings.contains(TOKEN_STRING) 
-	 	    		&& settings.contains(SECRET_STRING)) {
+	 	    if(settings.contains(TOKEN_STRING) && settings.contains(SECRET_STRING)) {
 	 	    	String token = settings.getString(TOKEN_STRING, "");
 	 	    	String secret = settings.getString(SECRET_STRING, "");
 	 	    	Log.d(TAG, "From preferences!! Token: " + token + ", Secret: " + secret);
 	 	    	mConsumer.setTokenWithSecret(token, secret);
-        		mCB.setChecked(true);
-        		mEditGroup.setEnabled(true);
 	 	    }
 			mProvider = new DefaultOAuthProvider(mConsumer,TWITTER_REQUEST_TOKEN_URL,TWITTER_ACCESS_TOKEN_URL,TWITTER_AUTHORIZE_URL);
         }
+        mClient = new DefaultHttpClient();
+        JSONObject jso;
+        if((jso = getCredentials()) != null) {
+        	mButton.setEnabled(true);
+        	mEditor.setEnabled(true);
+    		mCB.setChecked(true);
+        	mUser.setText(jso.optString("name", "Bad Value"));
+        }
         mButton.setOnClickListener(this);
         mCB.setOnCheckedChangeListener(this);
-        mClient = new DefaultHttpClient();
     }
     
     @Override
@@ -137,17 +140,20 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
         	    String token = mConsumer.getToken();
         	    String secret = mConsumer.getTokenSecret();
 	 	    	Log.d(TAG, "New OAuth Token: " + token + ", New Secret: " + secret);
-	 	    	
-         	    SharedPreferences settings = this.getSharedPreferences(PREFS, 0);
-        	    SharedPreferences.Editor editor = settings.edit();
-        	    if(!settings.contains(TOKEN_STRING))
-        	    		editor.putString(TOKEN_STRING, token);
-        	    if(!settings.contains(SECRET_STRING))
-        	    	editor.putString(SECRET_STRING, secret);
-        	    editor.commit();
-
-        	    mEditGroup.setEnabled(true);
-        	    
+	 	    	JSONObject jso;
+	 	        if((jso = getCredentials()) != null) {
+	 	        	mButton.setEnabled(true);
+	 	        	mEditor.setEnabled(true);
+	         	    SharedPreferences settings = this.getSharedPreferences(PREFS, 0);
+	        	    SharedPreferences.Editor editor = settings.edit();
+	        	    if(!settings.contains(TOKEN_STRING))
+	        	    		editor.putString(TOKEN_STRING, token);
+	        	    if(!settings.contains(SECRET_STRING))
+	        	    	editor.putString(SECRET_STRING, secret);
+	        	    editor.commit();
+	        	    JSONObject user = jso.getJSONObject("user");
+	        	    mUser.setText(user.optString("name", "Bad Value"));
+	 	        }
 			} catch (OAuthMessageSignerException e) {
 				e.printStackTrace();
 			} catch (OAuthNotAuthorizedException e) {
@@ -155,6 +161,8 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
 			} catch (OAuthExpectationFailedException e) {
 				e.printStackTrace();
 			} catch (OAuthCommunicationException e) {
+				e.printStackTrace();
+			} catch (JSONException e) {
 				e.printStackTrace();
 			}
     	} else {
@@ -193,11 +201,10 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
     	    editor.remove(TOKEN_STRING);
     	    editor.remove(SECRET_STRING);
     	    editor.commit();
-
-    	    mEditGroup.setEnabled(false);
-    	    mCB.setChecked(false);
-    	    finish();
- 		}
+    	    mUser.setText("");
+        	mButton.setEnabled(false);
+        	mEditor.setEnabled(false);
+		}
 	}
 
     public HttpParams getParams() { 
@@ -208,9 +215,8 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
         return params; 
     }
     
-	@Override
-	public void onClick(View v) {
-		try {
+    public JSONObject getCredentials() {
+    	try {
 			String response;
 			HttpContext c = new BasicHttpContext();
 			// First let's verify our credentials
@@ -223,28 +229,46 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
 	        JSONObject respJSO = new JSONObject(response);
 	        Log.d(TAG, "Credentials: " + respJSO.toString(2));
 			
-			// create a request that requires authentication
-	        HttpPost post = new HttpPost("http://twitter.com/statuses/update.json");
-	        LinkedList<BasicNameValuePair> out = new LinkedList<BasicNameValuePair>();
-	        
-	        // 'status' here is the update value you collect from UI
-	        out.add(new BasicNameValuePair("status", mEditor.getText().toString()));
-	        HttpEntity e = new UrlEncodedFormEntity(out, HTTP.UTF_8);
-			post.setEntity(e);
-	        post.setParams(this.getParams());
-	        
-	        // sign the request to authenticate
-			mConsumer.sign(post);
-			
-	        // send the request
-			// HttpContext c = new BasicHttpContext();
-	        response = mClient.execute(post, new BasicResponseHandler(), c);
-	        mEditor.setText("");
+    		return respJSO;
+    		
+    	} catch (JSONException e) {
+    		e.printStackTrace();
+    	} catch (OAuthMessageSignerException e) {
+			e.printStackTrace();
+		} catch (OAuthExpectationFailedException e) {
+			e.printStackTrace();
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+       	return null;
+    }
+    
+    public JSONObject postTweet() {
 
-	        JSONObject jso = new JSONObject(response);
-	        Log.d(TAG, "Response: " + jso.toString(2));
-	        String status = jso.optString("text", "Bad Value");
-	        mDisplay.setText(status);
+    	String response;
+		HttpContext c = new BasicHttpContext();
+		// create a request that requires authentication
+        HttpPost post = new HttpPost("http://twitter.com/statuses/update.json");
+        LinkedList<BasicNameValuePair> out = new LinkedList<BasicNameValuePair>();
+        
+        // 'status' here is the update value you collect from UI
+        out.add(new BasicNameValuePair("status", mEditor.getText().toString()));
+        HttpEntity entity;
+		try {
+			entity = new UrlEncodedFormEntity(out, HTTP.UTF_8);
+			post.setEntity(entity);
+			post.setParams(this.getParams());
+        
+			// sign the request to authenticate
+			mConsumer.sign(post);
+		
+			response = mClient.execute(post, new BasicResponseHandler(), c);
+			mEditor.setText("");
+
+			return new JSONObject(response);
+
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
 		} catch (OAuthMessageSignerException e) {
@@ -257,8 +281,20 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
 			e.printStackTrace();
 		} catch (JSONException e) {
 			e.printStackTrace();
-		} finally {
-			
 		}
+    	return null;
+    }
+    
+	@Override
+	public void onClick(View v) {
+		JSONObject jso = postTweet();
+        try {
+			Log.d(TAG, "Response: " + jso.toString(2));
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+        String status = jso.optString("text", "Bad Value");
+        mDisplay.setText(status);
 	}
 }

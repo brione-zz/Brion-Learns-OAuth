@@ -4,22 +4,25 @@
     android:layout_height="fill_parent"
     android:orientation="vertical"
     >
-	<LinearLayout
+	<RelativeLayout
 	    android:layout_width="fill_parent"
 	    android:layout_height="wrap_content"
-	    android:orientation="horizontal"
 	    >
-		<TextView  
-		    android:layout_width="wrap_content" 
-		    android:layout_height="wrap_content" 
-		    android:text="@string/twitter"
-	    />
-	    <CheckBox 
-	    	android:id="@+id/enable"
+	    <CheckBox android:id="@+id/enable"
 	    	android:layout_width="wrap_content"
 	    	android:layout_height="wrap_content"
+	    	android:layout_alignParentTop="true"
+	    	android:layout_alignParentLeft="true"
 	    />
-	</LinearLayout>
+		<TextView android:id="@+id/user"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_toRightOf="@id/enable"
+			android:layout_alignParentRight="true"
+			android:layout_alignParentTop="true"
+			android:hint="@string/userhint"
+		/>
+	</RelativeLayout>
 	<TextView
 		android:id="@+id/last"
 		android:layout_width="fill_parent"
@@ -31,7 +34,6 @@
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
 		android:orientation="vertical"
-		android:enabled="false"
 	>
 		<TextView
 			android:layout_width="fill_parent"
@@ -43,11 +45,13 @@
 			android:layout_height="wrap_content"
 			android:lines="3"
 			android:hint="@string/tweet"
+			android:enabled="false"
 		/>
 		<Button android:id="@+id/post"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:text="@string/post"
+			android:enabled="false"
 		/>
 	</LinearLayout>
 </LinearLayout>
