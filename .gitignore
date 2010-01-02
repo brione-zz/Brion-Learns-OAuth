@@ -2,5 +2,5 @@ gen
 bin
 .classpath
 .project
-src/com/example/bloa/Keys.java
+src/com/example/bloa/MyKeys.java
 

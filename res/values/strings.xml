@@ -8,5 +8,5 @@
     <string name="token">token</string>
     <string name="secret">secret</string>
     <string name="type">Type something and see if it shows up here</string>
-    <string name="status">Ok, this is the one we've all been waiting for!!! Well, maybe not you...</string>
+    <string name="status">Ok, this is the one we\'ve all been waiting for!!! Well, maybe not you...</string>
 </resources>
