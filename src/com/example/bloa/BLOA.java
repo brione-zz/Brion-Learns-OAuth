@@ -288,12 +288,6 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
 	@Override
 	public void onClick(View v) {
 		JSONObject jso = postTweet();
-        try {
-			Log.d(TAG, "Response: " + jso.toString(2));
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
         String status = jso.optString("text", "Bad Value");
         mDisplay.setText(status);
 	}
