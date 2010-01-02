@@ -20,6 +20,8 @@
 			android:layout_toRightOf="@id/enable"
 			android:layout_alignParentRight="true"
 			android:layout_alignParentTop="true"
+			android:layout_alignBaseline="@id/enable"
+			android:layout_gravity="center_vertical|center_horizontal"
 			android:hint="@string/userhint"
 		/>
 	</RelativeLayout>
