@@ -174,7 +174,11 @@ public class BLOA extends Activity implements OnClickListener {
 
 		@Override
 		protected void onPreExecute() {
-			authDialog = ProgressDialog.show(BLOA.this, getText(R.string.auth_progress_title), getText(R.string.auth_progress_text), true);
+			authDialog = ProgressDialog.show(BLOA.this, 
+					getText(R.string.auth_progress_title), 
+					getText(R.string.auth_progress_text), 
+					true,	// indeterminate duration
+					false); // not cancel-able
 		}
 		
 		@Override
@@ -230,7 +234,11 @@ public class BLOA extends Activity implements OnClickListener {
 
 		@Override
 		protected void onPreExecute() {
-			postDialog = ProgressDialog.show(BLOA.this, getText(R.string.tweet_progress_title), getText(R.string.tweet_progress_text), true);
+			postDialog = ProgressDialog.show(BLOA.this, 
+					getText(R.string.tweet_progress_title), 
+					getText(R.string.tweet_progress_text), 
+					true,	// indeterminate duration
+					false); // not cancel-able
 		}
 		
 		@Override
