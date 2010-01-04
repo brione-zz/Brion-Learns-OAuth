@@ -44,7 +44,6 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 
@@ -151,8 +150,8 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
 	        	    if(!settings.contains(SECRET_STRING))
 	        	    	editor.putString(SECRET_STRING, secret);
 	        	    editor.commit();
-	        	    JSONObject user = jso.getJSONObject("user");
-	        	    mUser.setText(user.optString("name", "Bad Value"));
+	        	    
+	        	    mUser.setText(jso.optString("name", "Bad Value"));
 	 	        }
 			} catch (OAuthMessageSignerException e) {
 				e.printStackTrace();
@@ -161,8 +160,6 @@ public class BLOA extends Activity implements OnCheckedChangeListener, OnClickLi
 			} catch (OAuthExpectationFailedException e) {
 				e.printStackTrace();
 			} catch (OAuthCommunicationException e) {
-				e.printStackTrace();
-			} catch (JSONException e) {
 				e.printStackTrace();
 			}
     	} else {
