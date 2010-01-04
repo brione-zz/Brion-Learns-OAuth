@@ -333,8 +333,8 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 		}
 	}
 	
-	private String getCurrentTweet(JSONObject response) {
-		return response.optString("text", getString(R.string.bad_value));
+	private String getCurrentTweet(JSONObject status) {
+		return status.optString("text", getString(R.string.bad_value));
 	}
 
 	@Override
