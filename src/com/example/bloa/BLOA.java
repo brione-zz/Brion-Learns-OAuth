@@ -15,7 +15,6 @@ import oauth.signpost.exception.OAuthMessageSignerException;
 import oauth.signpost.exception.OAuthNotAuthorizedException;
 import oauth.signpost.signature.SignatureMethod;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
@@ -26,9 +25,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpContext;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -44,14 +41,11 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 
-public class BLOA extends Activity implements OnCheckedChangeListener,
-		OnClickListener {
+public class BLOA extends Activity implements OnClickListener {
 	public static final String TAG = "BLOA";
 
 	public static final String TWITTER_REQUEST_TOKEN_URL = "http://twitter.com/oauth/request_token";
@@ -94,7 +88,7 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 					.getSerializable("consumer");
 			mProvider = (OAuthProvider) savedInstanceState
 					.getSerializable("provider");
-			getCredentials();
+			new GetCredentialsTask().execute();
 		} else {
 			boolean prefs = false;
 			mConsumer = new CommonsHttpOAuthConsumer(Keys.TWITTER_CONSUMER_KEY,
@@ -111,7 +105,7 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 					TWITTER_REQUEST_TOKEN_URL, TWITTER_ACCESS_TOKEN_URL,
 					TWITTER_AUTHORIZE_URL);
 			if(prefs)
-				getCredentials();
+				new GetCredentialsTask().execute();
 		}
 		mButton.setOnClickListener(this);
 		mCB.setOnClickListener(this);
@@ -134,7 +128,7 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 				String token = mConsumer.getToken();
 				String secret = mConsumer.getTokenSecret();
 				this.saveAuthInformation(token, secret);
-				getCredentials();
+				new GetCredentialsTask().execute();
 			} catch (OAuthMessageSignerException e) {
 				e.printStackTrace();
 			} catch (OAuthNotAuthorizedException e) {
@@ -147,6 +141,11 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 		}
 	}
 	
+	// Get stuff from the two types of Twitter JSONObject we deal with: credentials and status 
+	private String getCurrentTweet(JSONObject status) {
+		return status.optString("text", getString(R.string.bad_value));
+	}
+
 	private String getUserName(JSONObject credentials) {
 		return credentials.optString("name", getString(R.string.bad_value));
 	}
@@ -161,43 +160,12 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 		}
 	}
 
-	@Override
-	public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
-		String authUrl = null;
-
-		if (arg1) {
-			try {
-				authUrl = mProvider.retrieveRequestToken(CALLBACK_URI
-						.toString());
-				Log.d(TAG, "AuthUrl: " + authUrl);
-				Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
-				this.startActivity(i);
-			} catch (OAuthMessageSignerException e) {
-				e.printStackTrace();
-			} catch (OAuthNotAuthorizedException e) {
-				e.printStackTrace();
-			} catch (OAuthExpectationFailedException e) {
-				e.printStackTrace();
-			} catch (OAuthCommunicationException e) {
-				e.printStackTrace();
-			}
-		} else {
-			saveAuthInformation(null, null);
-			getCredentials();
-		}
-	}
-
 	public HttpParams getParams() {
 		// Tweak further as needed for your app
 		HttpParams params = new BasicHttpParams();
 		// set this to false, or else you'll get an Expectation Failed: error
 		HttpProtocolParams.setUseExpectContinue(params, false);
 		return params;
-	}
-
-
-	public void getCredentials() {
-		new GetCredentialsTask().execute();
 	}
 
 	private class GetCredentialsTask extends AsyncTask<Void, Void, JSONObject> {
@@ -235,6 +203,7 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 			return jso;
 		}
 		
+		// This is in the UI thread, so we can mess with the UI
 		protected void onPostExecute(JSONObject jso) {
 			authDialog.dismiss();
 			if(jso != null) { // authorization succeeded, the json object contains the user information
@@ -253,30 +222,6 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 				mDisplay.setText("");
 			}
 		}
-	}
-	
-	private void saveAuthInformation(String token, String secret) {
-		// null means to clear the old values
-		SharedPreferences settings = BLOA.this.getSharedPreferences(PREFS, 0);
-		SharedPreferences.Editor editor = settings.edit();
-		if(token == null) {
-			editor.remove(TOKEN_STRING);
-			Log.d(TAG, "Clearing OAuth Token");
-		}
-		else {
-			editor.putString(TOKEN_STRING, token);
-			Log.d(TAG, "Saving OAuth Token: " + token);
-		}
-		if (secret == null) {
-			editor.remove(SECRET_STRING);
-			Log.d(TAG, "Clearing OAuth Secret");
-		}
-		else {
-			editor.putString(SECRET_STRING, secret);
-			Log.d(TAG, "Saving OAuth Secret: " + secret);
-		}
-		editor.commit();
-		
 	}
 	
 	private class PostTask extends AsyncTask<String, Void, JSONObject> {
@@ -333,10 +278,6 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 		}
 	}
 	
-	private String getCurrentTweet(JSONObject status) {
-		return status.optString("text", getString(R.string.bad_value));
-	}
-
 	@Override
 	public void onClick(View v) {
 		if(mCB.equals(v)) {
@@ -371,4 +312,29 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 			}
 		}
 	}
+
+	private void saveAuthInformation(String token, String secret) {
+		// null means to clear the old values
+		SharedPreferences settings = BLOA.this.getSharedPreferences(PREFS, 0);
+		SharedPreferences.Editor editor = settings.edit();
+		if(token == null) {
+			editor.remove(TOKEN_STRING);
+			Log.d(TAG, "Clearing OAuth Token");
+		}
+		else {
+			editor.putString(TOKEN_STRING, token);
+			Log.d(TAG, "Saving OAuth Token: " + token);
+		}
+		if (secret == null) {
+			editor.remove(SECRET_STRING);
+			Log.d(TAG, "Clearing OAuth Secret");
+		}
+		else {
+			editor.putString(SECRET_STRING, secret);
+			Log.d(TAG, "Saving OAuth Secret: " + secret);
+		}
+		editor.commit();
+		
+	}
+	
 }
