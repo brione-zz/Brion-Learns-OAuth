@@ -94,15 +94,9 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 					.getSerializable("consumer");
 			mProvider = (OAuthProvider) savedInstanceState
 					.getSerializable("provider");
-			String token = mConsumer.getToken();
-			String secret = mConsumer.getTokenSecret();
-			if (token != null && secret != null) {
-				Log.d(TAG, "From Saved!! Token: " + token + ", Secret: "
-						+ secret);
-				// mCB.setChecked(true);
-				// mEditGroup.setEnabled(true);
-			}
+			getCredentials();
 		} else {
+			boolean prefs = false;
 			mConsumer = new CommonsHttpOAuthConsumer(Keys.TWITTER_CONSUMER_KEY,
 					Keys.TWITTER_CONSUMER_SECRET, SignatureMethod.HMAC_SHA1);
 
@@ -110,18 +104,17 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 			if (settings.contains(TOKEN_STRING) && settings.contains(SECRET_STRING)) {
 				String token = settings.getString(TOKEN_STRING, "");
 				String secret = settings.getString(SECRET_STRING, "");
-				Log.d(TAG, "From preferences!! Token: " + token + ", Secret: "
-						+ secret);
 				mConsumer.setTokenWithSecret(token, secret);
+				prefs = true;
 			}
 			mProvider = new DefaultOAuthProvider(mConsumer,
 					TWITTER_REQUEST_TOKEN_URL, TWITTER_ACCESS_TOKEN_URL,
 					TWITTER_AUTHORIZE_URL);
+			if(prefs)
+				getCredentials();
 		}
-		
-		getCredentials();
 		mButton.setOnClickListener(this);
-		mCB.setOnCheckedChangeListener(this);
+		mCB.setOnClickListener(this);
 	}
 
 	@Override
@@ -141,8 +134,7 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 				String token = mConsumer.getToken();
 				String secret = mConsumer.getTokenSecret();
 				this.saveAuthInformation(token, secret);
-				Log.d(TAG, "New OAuth Token: " + token + ", New Secret: "
-						+ secret);
+				getCredentials();
 			} catch (OAuthMessageSignerException e) {
 				e.printStackTrace();
 			} catch (OAuthNotAuthorizedException e) {
@@ -153,17 +145,16 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 				e.printStackTrace();
 			}
 		}
-		getCredentials();
 	}
 	
 	private String getUserName(JSONObject credentials) {
-		return credentials.optString("name", "Bad value");
+		return credentials.optString("name", getString(R.string.bad_value));
 	}
 
 	private String getLastTweet(JSONObject credentials) {
 		try {
 			JSONObject status = credentials.getJSONObject("status");
-			return status.getString("text");
+			return getCurrentTweet(status);
 		} catch (JSONException e) {
 			e.printStackTrace();
 			return "";
@@ -247,11 +238,15 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 		protected void onPostExecute(JSONObject jso) {
 			authDialog.dismiss();
 			if(jso != null) { // authorization succeeded, the json object contains the user information
+				if(!mCB.isChecked())
+					mCB.setChecked(true);
 				mButton.setEnabled(true);
 				mEditor.setEnabled(true);
 				mUser.setText(getUserName(jso));
 				mDisplay.setText(getLastTweet(jso));
 			} else {
+				if(mCB.isEnabled())
+					mCB.setChecked(false);
 				mButton.setEnabled(false);
 				mEditor.setEnabled(false);
 				mCB.setChecked(false);
@@ -264,14 +259,22 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 		// null means to clear the old values
 		SharedPreferences settings = BLOA.this.getSharedPreferences(PREFS, 0);
 		SharedPreferences.Editor editor = settings.edit();
-		if(token == null)
+		if(token == null) {
 			editor.remove(TOKEN_STRING);
-		else
+			Log.d(TAG, "Clearing OAuth Token");
+		}
+		else {
 			editor.putString(TOKEN_STRING, token);
-		if (secret == null)
+			Log.d(TAG, "Saving OAuth Token: " + token);
+		}
+		if (secret == null) {
 			editor.remove(SECRET_STRING);
-		else
+			Log.d(TAG, "Clearing OAuth Secret");
+		}
+		else {
 			editor.putString(SECRET_STRING, secret);
+			Log.d(TAG, "Saving OAuth Secret: " + secret);
+		}
 		editor.commit();
 		
 	}
@@ -289,21 +292,15 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 		protected JSONObject doInBackground(String... params) {
 
 			DefaultHttpClient mClient = new DefaultHttpClient();
-			// create a request that requires authentication
-			HttpPost post = new HttpPost("http://twitter.com/statuses/update.json");
-			LinkedList<BasicNameValuePair> out = new LinkedList<BasicNameValuePair>();
 			JSONObject jso = null;
-			// 'status' here is the update value you collect from UI
-			out.add(new BasicNameValuePair("status", params[0]));
-			HttpEntity entity;
 			try {
-				entity = new UrlEncodedFormEntity(out, HTTP.UTF_8);
-				post.setEntity(entity);
+				HttpPost post = new HttpPost("http://twitter.com/statuses/update.json");
+				LinkedList<BasicNameValuePair> out = new LinkedList<BasicNameValuePair>();
+				out.add(new BasicNameValuePair("status", params[0]));
+				post.setEntity(new UrlEncodedFormEntity(out, HTTP.UTF_8));
 				post.setParams(getParams());
-
 				// sign the request to authenticate
 				mConsumer.sign(post);
-
 				String response = mClient.execute(post, new BasicResponseHandler());
 				jso = new JSONObject(response);
 			} catch (UnsupportedEncodingException e) {
@@ -324,6 +321,7 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 			return jso;
 		}
 		
+		// This is in the UI thread, so we can mess with the UI
 		protected void onPostExecute(JSONObject jso) {
 			postDialog.dismiss();
 			if(jso != null) { // authorization succeeded, the json object contains the user information
@@ -333,25 +331,44 @@ public class BLOA extends Activity implements OnCheckedChangeListener,
 				mDisplay.setText(getText(R.string.tweet_error));
 			}
 		}
-		
 	}
 	
 	private String getCurrentTweet(JSONObject response) {
 		return response.optString("text", getString(R.string.bad_value));
 	}
 
-	public void postTweet() {
-		String postString = mEditor.getText().toString();
-		if (postString.length() == 0) {
-			Toast.makeText(this, getText(R.string.tweet_empty),
-					Toast.LENGTH_SHORT).show();
-		} else {
-			new PostTask().execute(postString);
-		}
-	}
-
 	@Override
 	public void onClick(View v) {
-		postTweet();
+		if(mCB.equals(v)) {
+			if(mCB.isChecked()) {
+				try {
+					String authUrl = mProvider.retrieveRequestToken(CALLBACK_URI.toString());
+					Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
+					this.startActivity(i);
+				} catch (OAuthMessageSignerException e) {
+					e.printStackTrace();
+				} catch (OAuthNotAuthorizedException e) {
+					e.printStackTrace();
+				} catch (OAuthExpectationFailedException e) {
+					e.printStackTrace();
+				} catch (OAuthCommunicationException e) {
+					e.printStackTrace();
+				}
+			} else {
+				saveAuthInformation(null, null);
+				mButton.setEnabled(false);
+				mEditor.setEnabled(false);
+				mCB.setChecked(false);
+				mDisplay.setText("");
+			}
+		} else if(mButton.equals(v)) {
+			String postString = mEditor.getText().toString();
+			if (postString.length() == 0) {
+				Toast.makeText(this, getText(R.string.tweet_empty),
+						Toast.LENGTH_SHORT).show();
+			} else {
+				new PostTask().execute(postString);
+			}
+		}
 	}
 }
