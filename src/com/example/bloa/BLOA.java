@@ -56,8 +56,8 @@ public class BLOA extends Activity implements OnClickListener {
 
 	private static final String PREFS = "MyPrefsFile";
 
-	private OAuthConsumer mConsumer;
-	private OAuthProvider mProvider;
+	private OAuthConsumer mConsumer = null;
+	private OAuthProvider mProvider = null;
 
 	private CheckBox mCB;
 	private EditText mEditor;
@@ -82,33 +82,31 @@ public class BLOA extends Activity implements OnClickListener {
 		mButton = (Button) this.findViewById(R.id.post);
 		mDisplay = (TextView) this.findViewById(R.id.last);
 		mUser = (TextView) this.findViewById(R.id.user);
+		mButton.setOnClickListener(this);
+		mCB.setOnClickListener(this);
 
-		if (savedInstanceState != null) {
-			mConsumer = (OAuthConsumer) savedInstanceState
-					.getSerializable("consumer");
-			mProvider = (OAuthProvider) savedInstanceState
-					.getSerializable("provider");
-			new GetCredentialsTask().execute();
-		} else {
+		if (savedInstanceState == null) {
 			boolean prefs = false;
-			mConsumer = new CommonsHttpOAuthConsumer(Keys.TWITTER_CONSUMER_KEY,
-					Keys.TWITTER_CONSUMER_SECRET, SignatureMethod.HMAC_SHA1);
-
+			mConsumer = new CommonsHttpOAuthConsumer(Keys.TWITTER_CONSUMER_KEY,Keys.TWITTER_CONSUMER_SECRET, SignatureMethod.HMAC_SHA1);
+			mProvider = new DefaultOAuthProvider(mConsumer,TWITTER_REQUEST_TOKEN_URL, TWITTER_ACCESS_TOKEN_URL,
+					TWITTER_AUTHORIZE_URL);
 			SharedPreferences settings = this.getSharedPreferences(PREFS, 0);
 			if (settings.contains(TOKEN_STRING) && settings.contains(SECRET_STRING)) {
 				String token = settings.getString(TOKEN_STRING, "");
 				String secret = settings.getString(SECRET_STRING, "");
-				mConsumer.setTokenWithSecret(token, secret);
-				prefs = true;
+				if(!(token.equals("") || secret.equals(""))) {
+					mConsumer.setTokenWithSecret(token, secret);
+					mProvider.setConsumer(mConsumer);
+					new GetCredentialsTask().execute();
+				}
 			}
-			mProvider = new DefaultOAuthProvider(mConsumer,
-					TWITTER_REQUEST_TOKEN_URL, TWITTER_ACCESS_TOKEN_URL,
-					TWITTER_AUTHORIZE_URL);
-			if(prefs)
+		} else { 
+			mConsumer = (OAuthConsumer) savedInstanceState.getSerializable("consumer");
+			mProvider = (OAuthProvider) savedInstanceState.getSerializable("provider");
+			if(!(mConsumer == null || mProvider == null)) {
 				new GetCredentialsTask().execute();
+			}
 		}
-		mButton.setOnClickListener(this);
-		mCB.setOnClickListener(this);
 	}
 
 	@Override
