@@ -6,7 +6,6 @@
     <application android:icon="@drawable/icon" android:label="@string/app_name">
         <activity android:name=".BLOA"
 			android:label="@string/app_name"
-			android:launchMode="singleInstance"
         >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

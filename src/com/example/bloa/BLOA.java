@@ -1,9 +1,13 @@
 package com.example.bloa;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 
+import junit.framework.Assert;
 import oauth.signpost.OAuth;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
@@ -31,6 +35,7 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -67,8 +72,10 @@ public class BLOA extends Activity implements OnClickListener {
 	
 	ProgressDialog postDialog = null;
 
-	private static final String TOKEN_STRING = "token";
-	private static final String SECRET_STRING = "secret";
+	private static final String USER_TOKEN = "user_token";
+	private static final String USER_SECRET = "user_secret";
+	private static final String REQUEST_TOKEN = "request_token";
+	private static final String REQUEST_SECRET = "request_secret";
 
 	/** Called when the activity is first created. */
 	@Override
@@ -84,34 +91,71 @@ public class BLOA extends Activity implements OnClickListener {
 		mUser = (TextView) this.findViewById(R.id.user);
 		mButton.setOnClickListener(this);
 		mCB.setOnClickListener(this);
+		
+		mConsumer = new CommonsHttpOAuthConsumer(
+				Keys.TWITTER_CONSUMER_KEY,
+				Keys.TWITTER_CONSUMER_SECRET, 
+				SignatureMethod.HMAC_SHA1);
+		
+		mProvider = new DefaultOAuthProvider(
+				mConsumer,
+				TWITTER_REQUEST_TOKEN_URL, 
+				TWITTER_ACCESS_TOKEN_URL,
+				TWITTER_AUTHORIZE_URL);
 
-		if (savedInstanceState == null) {
-			mConsumer = new CommonsHttpOAuthConsumer(Keys.TWITTER_CONSUMER_KEY,Keys.TWITTER_CONSUMER_SECRET, SignatureMethod.HMAC_SHA1);
-			mProvider = new DefaultOAuthProvider(mConsumer,TWITTER_REQUEST_TOKEN_URL, TWITTER_ACCESS_TOKEN_URL,
-					TWITTER_AUTHORIZE_URL);
-			SharedPreferences settings = this.getSharedPreferences(PREFS, 0);
-			if (settings.contains(TOKEN_STRING) && settings.contains(SECRET_STRING)) {
-				String token = settings.getString(TOKEN_STRING, "");
-				String secret = settings.getString(SECRET_STRING, "");
-				if(!(token.equals("") || secret.equals(""))) {
-					mConsumer.setTokenWithSecret(token, secret);
-					mProvider.setConsumer(mConsumer);
-					new GetCredentialsTask().execute();
-				}
+		SharedPreferences settings = this.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+		String token;
+		String secret;
+		
+		if(settings.contains(USER_TOKEN) && settings.contains(USER_SECRET)) {
+			token = settings.getString(USER_TOKEN, null);
+			secret = settings.getString(USER_SECRET, null);
+			if(!(token == null || secret == null)) {
+				mConsumer.setTokenWithSecret(token, secret);
 			}
-		} else { 
-			mConsumer = (OAuthConsumer) savedInstanceState.getSerializable("consumer");
-			mProvider = (OAuthProvider) savedInstanceState.getSerializable("provider");
-			if(!(mConsumer == null || mProvider == null)) {
-				new GetCredentialsTask().execute();
+			mProvider.setConsumer(mConsumer);
+		} else if(settings.contains(REQUEST_TOKEN) && settings.contains(REQUEST_SECRET)) {
+			token = settings.getString(REQUEST_TOKEN, null);
+			secret = settings.getString(REQUEST_SECRET, null);
+			if(!(token == null || secret == null)) {
+				mConsumer.setTokenWithSecret(token, secret);
 			}
+			mProvider.setConsumer(mConsumer);
 		}
+		Log.d(TAG, "Provider: " + mProvider.toString());
 	}
 
 	@Override
+	protected void onResume() {
+		super.onResume();
+
+		Uri uri = getIntent().getData();
+		if (uri != null && CALLBACK_URI.getScheme().equals(uri.getScheme())) {
+			try {
+				String otoken = uri.getQueryParameter(OAuth.OAUTH_TOKEN);
+				String verifier = uri.getQueryParameter(OAuth.OAUTH_VERIFIER);
+				Assert.assertEquals(otoken, mConsumer.getToken());
+				mProvider.retrieveAccessToken(verifier);
+				this.saveRequestInformation(null, null);
+				String token = mConsumer.getToken();
+				String secret = mConsumer.getTokenSecret();
+				this.saveAuthInformation(token, secret);
+			} catch (OAuthMessageSignerException e) {
+				e.printStackTrace();
+			} catch (OAuthNotAuthorizedException e) {
+				e.printStackTrace();
+			} catch (OAuthExpectationFailedException e) {
+				e.printStackTrace();
+			} catch (OAuthCommunicationException e) {
+				e.printStackTrace();
+			}
+		}
+		new GetCredentialsTask().execute();
+	}
+	
+	@Override
 	protected void onSaveInstanceState(Bundle b) {
 		b.putSerializable("provider", mProvider);
-		b.putSerializable("consumer", mConsumer);
 	}
 
 	@Override
@@ -279,6 +323,15 @@ public class BLOA extends Activity implements OnClickListener {
 			if(mCB.isChecked()) {
 				try {
 					String authUrl = mProvider.retrieveRequestToken(CALLBACK_URI.toString());
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					ObjectOutputStream oos = new ObjectOutputStream(baos);
+					oos.writeObject(mProvider);
+					oos.close();
+					baos.toString();
+					Log.d(TAG, "onClick() - AuthUrl: " + authUrl);
+					Log.d(TAG, "onClick() - Request: " + mConsumer.getToken());
+					Log.d(TAG, "onClick() - Secret: " + mConsumer.getTokenSecret());
+					saveRequestInformation(mConsumer.getToken(), mConsumer.getTokenSecret());
 					Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
 					this.startActivity(i);
 				} catch (OAuthMessageSignerException e) {
@@ -288,6 +341,9 @@ public class BLOA extends Activity implements OnClickListener {
 				} catch (OAuthExpectationFailedException e) {
 					e.printStackTrace();
 				} catch (OAuthCommunicationException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} else {
@@ -309,24 +365,48 @@ public class BLOA extends Activity implements OnClickListener {
 		}
 	}
 
-	private void saveAuthInformation(String token, String secret) {
+	private void saveRequestInformation(String token, String secret) {
 		// null means to clear the old values
-		SharedPreferences settings = BLOA.this.getSharedPreferences(PREFS, 0);
+		SharedPreferences settings = BLOA.this.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
 		SharedPreferences.Editor editor = settings.edit();
 		if(token == null) {
-			editor.remove(TOKEN_STRING);
+			editor.remove(REQUEST_TOKEN);
+			Log.d(TAG, "Clearing Request Token");
+		}
+		else {
+			editor.putString(REQUEST_TOKEN, token);
+			Log.d(TAG, "Saving Request Token: " + token);
+		}
+		if (secret == null) {
+			editor.remove(REQUEST_SECRET);
+			Log.d(TAG, "Clearing Request Secret");
+		}
+		else {
+			editor.putString(REQUEST_SECRET, secret);
+			Log.d(TAG, "Saving Request Secret: " + secret);
+		}
+		editor.commit();
+		
+	}
+	
+	private void saveAuthInformation(String token, String secret) {
+		// null means to clear the old values
+		SharedPreferences settings = BLOA.this.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+		SharedPreferences.Editor editor = settings.edit();
+		if(token == null) {
+			editor.remove(USER_TOKEN);
 			Log.d(TAG, "Clearing OAuth Token");
 		}
 		else {
-			editor.putString(TOKEN_STRING, token);
+			editor.putString(USER_TOKEN, token);
 			Log.d(TAG, "Saving OAuth Token: " + token);
 		}
 		if (secret == null) {
-			editor.remove(SECRET_STRING);
+			editor.remove(USER_SECRET);
 			Log.d(TAG, "Clearing OAuth Secret");
 		}
 		else {
-			editor.putString(SECRET_STRING, secret);
+			editor.putString(USER_SECRET, secret);
 			Log.d(TAG, "Saving OAuth Secret: " + secret);
 		}
 		editor.commit();
