@@ -2,18 +2,17 @@
 <resources>
     <string name="twitter">Logged In?</string>
     <string name="app_name">BLOA</string>
-    <string name="tweet">Enter your Tweet here</string>
-    <string name="label"><b>Tweet Away</b></string>
+    <string name="tweet">Enter your Message here</string>
+    <string name="label"><b>Type Something</b></string>
     <string name="post"><b>Post</b></string>
     <string name="token">token</string>
     <string name="secret">secret</string>
     <string name="userhint">Not logged in</string>
     <string name="type">Type something and see if it shows up here</string>
-    <string name="status">Ok, this is the one we\'ve all been waiting for!!! Well, maybe not you...</string>
     <string name="auth_progress_title">Authenticating...</string>
-    <string name="auth_progress_text">We're getting your information from Twitter.</string>
+    <string name="auth_progress_text">Fetching your profile information.</string>
     <string name="tweet_progress_title">Sending...</string>
-    <string name="tweet_progress_text">Posting your Tweet</string>
+    <string name="tweet_progress_text">Posting your Message</string>
     <string name="tweet_empty">You have to enter something</string>
     <string name="tweet_error">There was some kind of problem!</string>
     <string name="bad_value">Bad Value</string>
