@@ -3,7 +3,6 @@ package com.example.bloa;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
-import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 
@@ -102,6 +101,8 @@ public class BLOA extends Activity implements OnClickListener {
 				TWITTER_REQUEST_TOKEN_URL, 
 				TWITTER_ACCESS_TOKEN_URL,
 				TWITTER_AUTHORIZE_URL);
+		
+		mProvider.setOAuth10a(true);
 
 		SharedPreferences settings = this.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
 		String token;
@@ -113,16 +114,15 @@ public class BLOA extends Activity implements OnClickListener {
 			if(!(token == null || secret == null)) {
 				mConsumer.setTokenWithSecret(token, secret);
 			}
-			mProvider.setConsumer(mConsumer);
 		} else if(settings.contains(REQUEST_TOKEN) && settings.contains(REQUEST_SECRET)) {
 			token = settings.getString(REQUEST_TOKEN, null);
 			secret = settings.getString(REQUEST_SECRET, null);
 			if(!(token == null || secret == null)) {
 				mConsumer.setTokenWithSecret(token, secret);
 			}
-			mProvider.setConsumer(mConsumer);
 		}
 		Log.d(TAG, "Provider: " + mProvider.toString());
+		mProvider.setConsumer(mConsumer);
 	}
 
 	@Override
