@@ -14,7 +14,6 @@ import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
 import oauth.signpost.exception.OAuthNotAuthorizedException;
-import oauth.signpost.signature.SignatureMethod;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -91,12 +90,10 @@ public class BLOA extends Activity implements OnClickListener {
 		
 		// We don't need to worry about any saved states: we can reconstruct the state
 		mConsumer = new CommonsHttpOAuthConsumer(
-				Keys.TWITTER_CONSUMER_KEY,
-				Keys.TWITTER_CONSUMER_SECRET, 
-				SignatureMethod.HMAC_SHA1);
+				Keys.TWITTER_CONSUMER_KEY, 
+				Keys.TWITTER_CONSUMER_SECRET);
 		
 		mProvider = new DefaultOAuthProvider(
-				mConsumer,
 				TWITTER_REQUEST_TOKEN_URL, 
 				TWITTER_ACCESS_TOKEN_URL,
 				TWITTER_AUTHORIZE_URL);
@@ -126,9 +123,6 @@ public class BLOA extends Activity implements OnClickListener {
 				mConsumer.setTokenWithSecret(token, secret);
 			}
 		}
-		// You should do this (apparently) whenever you change the consumer in any way, like what we might have
-		// done above. It doesn't hurt to get them reacquainted again. 
-		mProvider.setConsumer(mConsumer);
 	}
 
 	@Override
@@ -147,7 +141,7 @@ public class BLOA extends Activity implements OnClickListener {
 				Assert.assertEquals(otoken, mConsumer.getToken());
 
 				// This is the moment of truth - we could throw here
-				mProvider.retrieveAccessToken(verifier);
+				mProvider.retrieveAccessToken(mConsumer, verifier);
 
 				// Clear the saved request information, now that we have a blessed token/secret
 				this.saveRequestInformation(null, null);
@@ -230,6 +224,8 @@ public class BLOA extends Activity implements OnClickListener {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
+			} catch (OAuthCommunicationException e) {
+				e.printStackTrace();
 			}
 			return jso;
 		}
@@ -283,12 +279,16 @@ public class BLOA extends Activity implements OnClickListener {
 				e.printStackTrace();
 			} catch (OAuthExpectationFailedException e) {
 				e.printStackTrace();
+			} catch (OAuthCommunicationException e) {
+				e.printStackTrace();
 			} catch (ClientProtocolException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (JSONException e) {
 				e.printStackTrace();
+			} finally {
+				
 			}
 			return jso;
 		}
@@ -311,7 +311,7 @@ public class BLOA extends Activity implements OnClickListener {
 		if(mCB.equals(v)) {
 			if(mCB.isChecked()) {
 				try {
-					String authUrl = mProvider.retrieveRequestToken(CALLBACK_URI.toString());
+					String authUrl = mProvider.retrieveRequestToken(mConsumer, CALLBACK_URI.toString());
 					Log.d(TAG, "onClick() - AuthUrl: " + authUrl);
 					Log.d(TAG, "onClick() - Request: " + mConsumer.getToken());
 					Log.d(TAG, "onClick() - Secret: " + mConsumer.getTokenSecret());
