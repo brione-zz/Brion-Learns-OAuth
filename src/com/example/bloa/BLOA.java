@@ -86,6 +86,7 @@ public class BLOA extends Activity implements OnClickListener {
 		mCB.setOnClickListener(this);
 
 		if (savedInstanceState == null) {
+			boolean prefs = false;
 			mConsumer = new CommonsHttpOAuthConsumer(Keys.TWITTER_CONSUMER_KEY,Keys.TWITTER_CONSUMER_SECRET, SignatureMethod.HMAC_SHA1);
 			mProvider = new DefaultOAuthProvider(mConsumer,TWITTER_REQUEST_TOKEN_URL, TWITTER_ACCESS_TOKEN_URL,
 					TWITTER_AUTHORIZE_URL);
@@ -207,11 +208,21 @@ public class BLOA extends Activity implements OnClickListener {
 		// This is in the UI thread, so we can mess with the UI
 		protected void onPostExecute(JSONObject jso) {
 			authDialog.dismiss();
-			mCB.setChecked(jso != null);
-			mButton.setEnabled(jso != null);
-			mEditor.setEnabled(jso != null);
-			mUser.setText(jso != null ? getUserName(jso) : "");
-			mDisplay.setText(jso != null ? getLastTweet(jso) : "");
+			if(jso != null) { // authorization succeeded, the json object contains the user information
+				if(!mCB.isChecked())
+					mCB.setChecked(true);
+				mButton.setEnabled(true);
+				mEditor.setEnabled(true);
+				mUser.setText(getUserName(jso));
+				mDisplay.setText(getLastTweet(jso));
+			} else {
+				if(mCB.isEnabled())
+					mCB.setChecked(false);
+				mButton.setEnabled(false);
+				mEditor.setEnabled(false);
+				mCB.setChecked(false);
+				mDisplay.setText("");
+			}
 		}
 	}
 	
@@ -297,7 +308,6 @@ public class BLOA extends Activity implements OnClickListener {
 				mCB.setChecked(false);
 				mDisplay.setText("");
 			}
-			mCB.setChecked(false); // the oauth callback will set it to the proper state
 		} else if(mButton.equals(v)) {
 			String postString = mEditor.getText().toString();
 			if (postString.length() == 0) {
