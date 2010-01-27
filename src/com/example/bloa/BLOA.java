@@ -1,8 +1,6 @@
 package com.example.bloa;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 
@@ -314,11 +312,6 @@ public class BLOA extends Activity implements OnClickListener {
 			if(mCB.isChecked()) {
 				try {
 					String authUrl = mProvider.retrieveRequestToken(CALLBACK_URI.toString());
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					ObjectOutputStream oos = new ObjectOutputStream(baos);
-					oos.writeObject(mProvider);
-					oos.close();
-					baos.toString();
 					Log.d(TAG, "onClick() - AuthUrl: " + authUrl);
 					Log.d(TAG, "onClick() - Request: " + mConsumer.getToken());
 					Log.d(TAG, "onClick() - Secret: " + mConsumer.getTokenSecret());
@@ -332,9 +325,6 @@ public class BLOA extends Activity implements OnClickListener {
 				} catch (OAuthExpectationFailedException e) {
 					e.printStackTrace();
 				} catch (OAuthCommunicationException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} else {
