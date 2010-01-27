@@ -199,9 +199,11 @@ public class BLOA extends Activity implements OnClickListener {
 	private class GetCredentialsTask extends AsyncTask<Void, Void, JSONObject> {
 
 		ProgressDialog authDialog;
+		DefaultHttpClient mClient;
 
 		@Override
 		protected void onPreExecute() {
+			mClient = new DefaultHttpClient();
 			authDialog = ProgressDialog.show(BLOA.this, 
 					getText(R.string.auth_progress_title), 
 					getText(R.string.auth_progress_text), 
@@ -212,7 +214,6 @@ public class BLOA extends Activity implements OnClickListener {
 		@Override
 		protected JSONObject doInBackground(Void... arg0) {
 			JSONObject jso = null;
-			DefaultHttpClient mClient = new DefaultHttpClient();
 			try {
 				HttpGet get = new HttpGet("http://twitter.com/account/verify_credentials.json");
 				mConsumer.sign(get);
@@ -229,14 +230,13 @@ public class BLOA extends Activity implements OnClickListener {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			} finally {
-				mClient.getConnectionManager().shutdown();
 			}
 			return jso;
 		}
 		
 		// This is in the UI thread, so we can mess with the UI
 		protected void onPostExecute(JSONObject jso) {
+			mClient.getConnectionManager().shutdown();
 			authDialog.dismiss();
 			mCB.setChecked(jso != null);
 			mButton.setEnabled(jso != null);
@@ -251,9 +251,11 @@ public class BLOA extends Activity implements OnClickListener {
 	private class PostTask extends AsyncTask<String, Void, JSONObject> {
 
 		ProgressDialog postDialog;
+		DefaultHttpClient mClient;
 
 		@Override
 		protected void onPreExecute() {
+			mClient = new DefaultHttpClient();
 			postDialog = ProgressDialog.show(BLOA.this, 
 					getText(R.string.tweet_progress_title), 
 					getText(R.string.tweet_progress_text), 
@@ -264,7 +266,6 @@ public class BLOA extends Activity implements OnClickListener {
 		@Override
 		protected JSONObject doInBackground(String... params) {
 
-			DefaultHttpClient mClient = new DefaultHttpClient();
 			JSONObject jso = null;
 			try {
 				HttpPost post = new HttpPost("http://twitter.com/statuses/update.json");
@@ -288,14 +289,13 @@ public class BLOA extends Activity implements OnClickListener {
 				e.printStackTrace();
 			} catch (JSONException e) {
 				e.printStackTrace();
-			} finally {
-				mClient.getConnectionManager().shutdown();
 			}
 			return jso;
 		}
 		
 		// This is in the UI thread, so we can mess with the UI
 		protected void onPostExecute(JSONObject jso) {
+			mClient.getConnectionManager().shutdown();
 			postDialog.dismiss();
 			if(jso != null) { // authorization succeeded, the json object contains the user information
 				mEditor.setText("");
