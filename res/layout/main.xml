@@ -25,12 +25,10 @@
 			android:hint="@string/userhint"
 		/>
 	</RelativeLayout>
-	<TextView
-		android:id="@+id/last"
+	<ListView
+		android:id="@android:id/list"
 		android:layout_width="fill_parent"
 		android:layout_height="wrap_content"
-		android:lines="3"
-		android:hint="@string/type"
 	/>
 	<LinearLayout android:id="@+id/edit_group"
 		android:layout_width="fill_parent"
@@ -42,18 +40,24 @@
 			android:layout_height="wrap_content"
 			android:text="@string/label"
 		/>
-		<EditText android:id="@+id/editor"
+		<LinearLayout 
+			android:orientation="horizontal"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
-			android:lines="3"
-			android:hint="@string/tweet"
-			android:enabled="false"
-		/>
-		<Button android:id="@+id/post"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:text="@string/post"
-			android:enabled="false"
-		/>
+		>
+			<EditText android:id="@+id/editor"
+				android:layout_width="fill_parent"
+				android:layout_height="wrap_content"
+				android:hint="@string/tweet"
+				android:enabled="false"
+			/>
+			<Button android:id="@+id/post"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:text="@string/post"
+				android:enabled="false"
+				android:layout_weight="1"
+			/>
+		</LinearLayout>
 	</LinearLayout>
 </LinearLayout>

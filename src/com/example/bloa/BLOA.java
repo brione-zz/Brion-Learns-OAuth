@@ -29,7 +29,7 @@ import org.apache.http.protocol.HTTP;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Activity;
+import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -46,7 +46,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class BLOA extends Activity implements OnClickListener {
+public class BLOA extends ListActivity implements OnClickListener {
 	public static final String TAG = "BLOA";
 
 	public static final String TWITTER_REQUEST_TOKEN_URL = "http://twitter.com/oauth/request_token";
@@ -63,7 +63,6 @@ public class BLOA extends Activity implements OnClickListener {
 	private CheckBox mCB;
 	private EditText mEditor;
 	private Button mButton;
-	private TextView mDisplay;
 	private TextView mUser;
 	
 	ProgressDialog postDialog = null;
@@ -83,7 +82,6 @@ public class BLOA extends Activity implements OnClickListener {
 		mCB.setChecked(false);
 		mEditor = (EditText) this.findViewById(R.id.editor);
 		mButton = (Button) this.findViewById(R.id.post);
-		mDisplay = (TextView) this.findViewById(R.id.last);
 		mUser = (TextView) this.findViewById(R.id.user);
 		mButton.setOnClickListener(this);
 		mCB.setOnClickListener(this);
@@ -238,7 +236,6 @@ public class BLOA extends Activity implements OnClickListener {
 			mButton.setEnabled(jso != null);
 			mEditor.setEnabled(jso != null);
 			mUser.setText(jso != null ? getUserName(jso) : getString(R.string.userhint));
-			mDisplay.setText(jso != null ? getLastTweet(jso) : getString(R.string.userhint));
 		}
 	}
 	
@@ -299,9 +296,75 @@ public class BLOA extends Activity implements OnClickListener {
 			postDialog.dismiss();
 			if(jso != null) { // authorization succeeded, the json object contains the user information
 				mEditor.setText("");
-				mDisplay.setText(getCurrentTweet(jso));
+				// mDisplay.setText(getCurrentTweet(jso));
 			} else {
-				mDisplay.setText(getText(R.string.tweet_error));
+				// mDisplay.setText(getText(R.string.tweet_error));
+			}
+		}
+	}
+	
+	private class StatusSelector extends Object {
+		public Long since_id; // ids newer than this will be fetched
+		public Long max_id; // ids older than this will be fetched
+		public Integer count; // # of tweets to fetch Max is 200
+		public Integer page; // # of page to fetch (with limits)
+	}
+	
+	private class GetHomeStatuses extends AsyncTask<StatusSelector, Void, JSONObject> {
+
+		DefaultHttpClient mClient;
+		
+		@Override
+		protected void onPreExecute() {
+			mClient = new DefaultHttpClient();
+		}
+
+		@Override
+		protected JSONObject doInBackground(StatusSelector... params) {
+			JSONObject jso = null;
+			try {
+				for(int i = 0; i < params.length; ++i) {
+					Uri sUri = Uri.parse("http://api.twitter.com/1/statuses/home_timeline.json");
+					Uri.Builder builder = sUri.buildUpon();
+					if(params[i].since_id != null) {
+						builder.appendQueryParameter("since_id", String.valueOf(params[i].since_id));
+					} else if (params[i].max_id != null) { // these are mutually exclusive
+						builder.appendQueryParameter("max_id", String.valueOf(params[i].max_id));
+					}
+					if(params[i].count != null) {
+						builder.appendQueryParameter("count", String.valueOf((params[i].count > 200) ? 200 : params[i].count));
+					}
+					if(params[i].page != null) {
+						builder.appendQueryParameter("page", String.valueOf(params[i].page));
+					}
+					HttpGet get = new HttpGet(sUri.toString());
+					mConsumer.sign(get);
+					String response = mClient.execute(get, new BasicResponseHandler());
+					jso = new JSONObject(response);
+					Log.d(TAG, "Response: " + jso.toString(2));
+				}
+			} catch (JSONException e) {
+				e.printStackTrace();
+			} catch (OAuthMessageSignerException e) {
+				e.printStackTrace();
+			} catch (OAuthExpectationFailedException e) {
+				e.printStackTrace();
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (OAuthCommunicationException e) {
+				e.printStackTrace();
+			}
+			return jso;
+		}
+
+		// This is in the UI thread, so we can mess with the UI
+		protected void onPostExecute(JSONObject jso) {
+			mClient.getConnectionManager().shutdown();
+			if(jso != null) {
+				
+			} else {
 			}
 		}
 	}
@@ -332,7 +395,7 @@ public class BLOA extends Activity implements OnClickListener {
 				mButton.setEnabled(false);
 				mEditor.setEnabled(false);
 				mCB.setChecked(false);
-				mDisplay.setText("");
+				// mDisplay.setText("");
 			}
 			mCB.setChecked(false); // the oauth callback will set it to the proper state
 		} else if(mButton.equals(v)) {
