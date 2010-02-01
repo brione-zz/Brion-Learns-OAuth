@@ -2,6 +2,7 @@
 <resources>
     <string name="twitter">Logged In?</string>
     <string name="app_name">BLOA</string>
+    <string name="oauth_name">OAUTH</string>
     <string name="tweet">Enter your Message here</string>
     <string name="label"><b>Type Something</b></string>
     <string name="post"><b>Post</b></string>
@@ -16,5 +17,8 @@
     <string name="tweet_empty">You have to enter something</string>
     <string name="tweet_error">There was some kind of problem!</string>
     <string name="bad_value">Bad Value</string>
+    <string name="connecting">Connecting</string>
+    <string name="connected">Connected - Please press Return</string>
+    <string name="connection_problem">Problem connecting - Please press Return</string>
     
 </resources>

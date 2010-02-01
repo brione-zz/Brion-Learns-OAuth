@@ -9,8 +9,13 @@
         >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity android:name=".OAUTH"
+			android:label="@string/oauth_name"
+        >
 			<intent-filter>
 				<action android:name="android.intent.action.VIEW" />
 				<category android:name="android.intent.category.DEFAULT" />
@@ -18,6 +23,12 @@
 				<data android:scheme="bloa-app" android:host="twitt" />
 			</intent-filter>
         </activity>
+    	<provider 
+			android:name=".BLOAProvider" 
+			android:authorities="com.example.bloa"
+			android:label="BLOA Provider"
+			android:icon="@drawable/beer_icon"
+		/>
     </application>
     <uses-sdk android:minSdkVersion="4" />
     <uses-permission android:name="android.permission.INTERNET" />
