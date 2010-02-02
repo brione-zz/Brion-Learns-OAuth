@@ -3,17 +3,13 @@ package com.example.bloa;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
+import java.util.List;
 
-import junit.framework.Assert;
-import oauth.signpost.OAuth;
 import oauth.signpost.OAuthConsumer;
-import oauth.signpost.OAuthProvider;
-import oauth.signpost.basic.DefaultOAuthProvider;
 import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
 import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
-import oauth.signpost.exception.OAuthNotAuthorizedException;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -26,10 +22,11 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Activity;
+import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -37,42 +34,52 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.format.Time;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class BLOA extends Activity implements OnClickListener {
+public class BLOA extends ListActivity implements OnClickListener {
 	public static final String TAG = "BLOA";
+
+	private CheckBox mCB;
+	private EditText mEditor;
+	private Button mButton;
+	private TextView mUser;
+	private TextView mLast;
+	
+	public static final String VERIFY_URL_STRING = "http://twitter.com/account/verify_credentials.json";
+	public static final String PUBLIC_TIMELINE_URL_STRING = "http://twitter.com/statuses/public_timeline.json";
+	public static final String USER_TIMELINE_URL_STRING = "http://twitter.com/statuses/user_timeline.json";
+	public static final String HOME_TIMELINE_URL_STRING = "http://api.twitter.com/1/statuses/home_timeline.json";	
+	public static final String FRIENDS_TIMELINE_URL_STRING = "http://api.twitter.com/1/statuses/friends_timeline.json";	
+	public static final String STATUSES_URL_STRING = "http://twitter.com/statuses/update.json";	
+
+	ProgressDialog postDialog = null;
 
 	public static final String TWITTER_REQUEST_TOKEN_URL = "http://twitter.com/oauth/request_token";
 	public static final String TWITTER_ACCESS_TOKEN_URL = "http://twitter.com/oauth/access_token";
 	public static final String TWITTER_AUTHORIZE_URL = "http://twitter.com/oauth/authorize";
 
-	private static final Uri CALLBACK_URI = Uri.parse("bloa-app://twitt");
-
-	private static final String PREFS = "MyPrefsFile";
-
 	private OAuthConsumer mConsumer = null;
-	private OAuthProvider mProvider = null;
-
-	private CheckBox mCB;
-	private EditText mEditor;
-	private Button mButton;
-	private TextView mDisplay;
-	private TextView mUser;
 	
-	ProgressDialog postDialog = null;
+	public String mToken;
+	public String mSecret;
+	
+	SharedPreferences mSettings;
+	
+	MyArrayAdapter mAA;
 
-	private static final String USER_TOKEN = "user_token";
-	private static final String USER_SECRET = "user_secret";
-	private static final String REQUEST_TOKEN = "request_token";
-	private static final String REQUEST_SECRET = "request_secret";
-
+	LinkedList<UserStatus> mHomeStatus = new LinkedList<UserStatus>();
+	
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -83,82 +90,92 @@ public class BLOA extends Activity implements OnClickListener {
 		mCB.setChecked(false);
 		mEditor = (EditText) this.findViewById(R.id.editor);
 		mButton = (Button) this.findViewById(R.id.post);
-		mDisplay = (TextView) this.findViewById(R.id.last);
 		mUser = (TextView) this.findViewById(R.id.user);
+		mLast = (TextView) this.findViewById(R.id.last);
 		mButton.setOnClickListener(this);
 		mCB.setOnClickListener(this);
-		
-		// We don't need to worry about any saved states: we can reconstruct the state
+		mSettings = getSharedPreferences(OAUTH.PREFS, Context.MODE_PRIVATE);
 		mConsumer = new CommonsHttpOAuthConsumer(
 				Keys.TWITTER_CONSUMER_KEY, 
 				Keys.TWITTER_CONSUMER_SECRET);
-		
-		mProvider = new DefaultOAuthProvider(
-				TWITTER_REQUEST_TOKEN_URL, 
-				TWITTER_ACCESS_TOKEN_URL,
-				TWITTER_AUTHORIZE_URL);
-		
-		// It turns out this was the missing thing to making standard Activity launch mode work
-		mProvider.setOAuth10a(true);
-
-		SharedPreferences settings = this.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-		String token;
-		String secret;
-		
-		// We look for saved user keys first. If we find them, we'll test them in onResume()
-		if(settings.contains(USER_TOKEN) && settings.contains(USER_SECRET)) {
-			token = settings.getString(USER_TOKEN, null);
-			secret = settings.getString(USER_SECRET, null);
-			if(!(token == null || secret == null)) {
-				mConsumer.setTokenWithSecret(token, secret);
-			}
-		} else 
-			// Now we see if we saved information from previous request and we're in the process of
-			// coming back with an oauth result. We have to restore the saved request token and secret
-			// so they will be available in onResume() when get the OAUTH response with the verification information
-			if(settings.contains(REQUEST_TOKEN) && settings.contains(REQUEST_SECRET)) {
-			token = settings.getString(REQUEST_TOKEN, null);
-			secret = settings.getString(REQUEST_SECRET, null);
-			if(!(token == null || secret == null)) {
-				mConsumer.setTokenWithSecret(token, secret);
-			}
-		}
+		mAA = new MyArrayAdapter(this, android.R.layout.two_line_list_item, android.R.id.text1, mHomeStatus);
+		this.setListAdapter(mAA);
 	}
-
+	
 	@Override
-	// Right now this will attempt to authenticate every time it is called.
-	protected void onResume() {
+	public void onResume() {
 		super.onResume();
-
-		Uri uri = getIntent().getData();
-		if (uri != null && CALLBACK_URI.getScheme().equals(uri.getScheme())) {
-			try {
-				String otoken = uri.getQueryParameter(OAuth.OAUTH_TOKEN);
-				String verifier = uri.getQueryParameter(OAuth.OAUTH_VERIFIER);
-
-				// We send out and save the request token, but the secret is not the same as the verifier
-				// Apparently, the verifier is decoded to get the secret, which is then compared - crafty
-				Assert.assertEquals(otoken, mConsumer.getToken());
-
-				// This is the moment of truth - we could throw here
-				mProvider.retrieveAccessToken(mConsumer, verifier);
-
-				// Clear the saved request information, now that we have a blessed token/secret
-				this.saveRequestInformation(null, null);
-				this.saveAuthInformation(mConsumer.getToken(), mConsumer.getTokenSecret());
-			} catch (OAuthMessageSignerException e) {
-				e.printStackTrace();
-			} catch (OAuthNotAuthorizedException e) {
-				e.printStackTrace();
-			} catch (OAuthExpectationFailedException e) {
-				e.printStackTrace();
-			} catch (OAuthCommunicationException e) {
-				e.printStackTrace();
+		
+		// We look for saved user keys
+		if(mSettings.contains(OAUTH.USER_TOKEN) && mSettings.contains(OAUTH.USER_SECRET)) {
+			mToken = mSettings.getString(OAUTH.USER_TOKEN, null);
+			mSecret = mSettings.getString(OAUTH.USER_SECRET, null);
+			if(!(mToken == null || mSecret == null)) {
+				mConsumer.setTokenWithSecret(mToken, mSecret);
 			}
 		}
 		new GetCredentialsTask().execute();
 	}
 	
+	@Override
+	public void onClick(View v) {
+		if(mCB.equals(v)) {
+			if(mCB.isChecked()) {
+				Intent i = new Intent(this, OAUTH.class);
+				startActivity(i);
+			} else {
+				OAUTH.saveAuthInformation(mSettings, null, null);
+				mButton.setEnabled(false);
+				mEditor.setEnabled(false);
+				mCB.setChecked(false);
+				mUser.setText("");
+			}
+			mCB.setChecked(false); // the oauth callback will set it to the proper state
+		} else if(mButton.equals(v)) {
+			String postString = mEditor.getText().toString();
+			if (postString.length() == 0) {
+				Toast.makeText(this, getText(R.string.tweet_empty), Toast.LENGTH_SHORT).show();
+			} else {
+				new PostTask().execute(postString);
+			}
+		}
+	}
+	
+	private class MyArrayAdapter extends ArrayAdapter<UserStatus> {
+		
+		LayoutInflater mInflater;
+		
+		public MyArrayAdapter(Context context, int resource, int textViewResourceId, List<UserStatus> objects) {
+			super(context, resource, textViewResourceId, objects);
+            mInflater = LayoutInflater.from(context);
+		}
+		
+		@Override
+		public View getView(int pos, View reUse, ViewGroup parent) {
+			String t;
+			ViewHolder holder;
+			if(reUse == null) {
+				reUse = mInflater.inflate(android.R.layout.two_line_list_item, null);
+				holder = new ViewHolder();
+				holder.text1 = (TextView) reUse.findViewById(android.R.id.text1);
+				holder.text2 = (TextView) reUse.findViewById(android.R.id.text2);
+				reUse.setTag(holder);
+			} else {
+				holder = (ViewHolder) reUse.getTag();
+			}
+			UserStatus us = this.getItem(pos);
+			t = us.getCreatedAt();
+			holder.text1.setText(us.getUserName() + ", " + t);
+			holder.text2.setText(us.getText());
+			return reUse;
+		}
+	
+        private class ViewHolder {
+            TextView text1;
+            TextView text2;
+        }
+	}
+
 	// Get stuff from the two types of Twitter JSONObject we deal with: credentials and status 
 	private String getCurrentTweet(JSONObject status) {
 		return status.optString("text", getString(R.string.bad_value));
@@ -186,15 +203,15 @@ public class BLOA extends Activity implements OnClickListener {
 		HttpProtocolParams.setUseExpectContinue(params, false);
 		return params;
 	}
-
+	
 	//----------------------------
 	// This task is run on every onResume(), to make sure the current credentials are valid.
 	// This is probably overkill for a non-educational program
 	private class GetCredentialsTask extends AsyncTask<Void, Void, JSONObject> {
-
+ 
 		ProgressDialog authDialog;
 		DefaultHttpClient mClient;
-
+ 
 		@Override
 		protected void onPreExecute() {
 			mClient = new DefaultHttpClient();
@@ -204,32 +221,32 @@ public class BLOA extends Activity implements OnClickListener {
 					true,	// indeterminate duration
 					false); // not cancel-able
 		}
-		
+ 
 		@Override
 		protected JSONObject doInBackground(Void... arg0) {
 			JSONObject jso = null;
-			try {
-				HttpGet get = new HttpGet("http://twitter.com/account/verify_credentials.json");
+	    	HttpGet get = new HttpGet(VERIFY_URL_STRING);
+	    	try {
 				mConsumer.sign(get);
 				String response = mClient.execute(get, new BasicResponseHandler());
 				jso = new JSONObject(response);
-				Log.d(TAG, "Credentials: " + jso.toString(2));
-			} catch (JSONException e) {
-				e.printStackTrace();
+				Log.d(TAG, "authenticatedQuery: " + jso.toString(2));
 			} catch (OAuthMessageSignerException e) {
 				e.printStackTrace();
 			} catch (OAuthExpectationFailedException e) {
+				e.printStackTrace();
+			} catch (OAuthCommunicationException e) {
+				e.printStackTrace();
+			} catch (JSONException e) {
 				e.printStackTrace();
 			} catch (ClientProtocolException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			} catch (OAuthCommunicationException e) {
-				e.printStackTrace();
 			}
 			return jso;
 		}
-		
+ 
 		// This is in the UI thread, so we can mess with the UI
 		protected void onPostExecute(JSONObject jso) {
 			mClient.getConnectionManager().shutdown();
@@ -238,17 +255,21 @@ public class BLOA extends Activity implements OnClickListener {
 			mButton.setEnabled(jso != null);
 			mEditor.setEnabled(jso != null);
 			mUser.setText(jso != null ? getUserName(jso) : getString(R.string.userhint));
-			mDisplay.setText(jso != null ? getLastTweet(jso) : getString(R.string.userhint));
+			mLast.setText(jso != null ? getLastTweet(jso) : getString(R.string.userhint));
+			if(jso != null) {
+				TimelineSelector ss = new TimelineSelector(HOME_TIMELINE_URL_STRING);
+				new GetTimelineTask().execute(ss);
+			}
 		}
 	}
-	
+ 
 	//----------------------------
 	// This task posts a message to your message queue on the service.
 	private class PostTask extends AsyncTask<String, Void, JSONObject> {
-
+ 
 		ProgressDialog postDialog;
 		DefaultHttpClient mClient;
-
+ 
 		@Override
 		protected void onPreExecute() {
 			mClient = new DefaultHttpClient();
@@ -258,10 +279,10 @@ public class BLOA extends Activity implements OnClickListener {
 					true,	// indeterminate duration
 					false); // not cancel-able
 		}
-		
+ 
 		@Override
 		protected JSONObject doInBackground(String... params) {
-
+ 
 			JSONObject jso = null;
 			try {
 				HttpPost post = new HttpPost("http://twitter.com/statuses/update.json");
@@ -288,110 +309,141 @@ public class BLOA extends Activity implements OnClickListener {
 			} catch (JSONException e) {
 				e.printStackTrace();
 			} finally {
-				
+ 
 			}
 			return jso;
 		}
-		
+ 
 		// This is in the UI thread, so we can mess with the UI
 		protected void onPostExecute(JSONObject jso) {
 			mClient.getConnectionManager().shutdown();
 			postDialog.dismiss();
 			if(jso != null) { // authorization succeeded, the json object contains the user information
 				mEditor.setText("");
-				mDisplay.setText(getCurrentTweet(jso));
+				mLast.setText(getCurrentTweet(jso));
 			} else {
-				mDisplay.setText(getText(R.string.tweet_error));
+				mLast.setText(getText(R.string.tweet_error));
 			}
 		}
 	}
 	
-	@Override
-	public void onClick(View v) {
-		if(mCB.equals(v)) {
-			if(mCB.isChecked()) {
+	
+	private class TimelineSelector extends Object {
+		public String url; // the url to perform the query from
+		// not all these apply to every url - you are responsible
+		public Long since_id; // ids newer than this will be fetched
+		public Long max_id; // ids older than this will be fetched
+		public Integer count; // # of tweets to fetch Max is 200
+		public Integer page; // # of page to fetch (with limits)
+		
+		public TimelineSelector(String u) {
+			url = u;
+			max_id = null;
+			since_id = null;
+			count = null;
+			page = null;
+		}
+		
+		public TimelineSelector(String u, Long since, Long max, Integer cnt, Integer pg) {
+			url = u;
+			max_id = max;
+			since_id = since;
+			count = cnt;
+			page = pg;
+		}
+	}
+	
+	private class UserStatus {
+		
+		JSONObject mStatus;
+		JSONObject mUser;
+		
+		public UserStatus(JSONObject status) throws JSONException {
+
+			mStatus = status;
+			mUser = status.getJSONObject("user");
+		}
+		public long getId() {
+			return mStatus.optLong("id", -1);
+		}
+		public String getUserName() {
+			return mUser.optString("name", getString(R.string.bad_value));
+		}
+		public String getText() {
+			return getCurrentTweet(mStatus);
+		}
+		public String getCreatedAt() {
+			Time ret1 = new Time();
+			return mStatus.optString("created_at", getString(R.string.bad_value));
+		}
+	}
+	
+	private class GetTimelineTask extends AsyncTask<TimelineSelector, Void, JSONArray> {
+
+		DefaultHttpClient mClient;
+		
+		@Override
+		protected void onPreExecute() {
+			mClient = new DefaultHttpClient();
+		}
+
+		@Override
+		protected JSONArray doInBackground(TimelineSelector... params) {
+			JSONArray array = null;
+			try {
+				for(int i = 0; i < params.length; ++i) {
+					Uri sUri = Uri.parse(params[i].url);
+					Uri.Builder builder = sUri.buildUpon();
+					if(params[i].since_id != null) {
+						builder.appendQueryParameter("since_id", String.valueOf(params[i].since_id));
+					} else if (params[i].max_id != null) { // these are mutually exclusive
+						builder.appendQueryParameter("max_id", String.valueOf(params[i].max_id));
+					}
+					if(params[i].count != null) {
+						builder.appendQueryParameter("count", String.valueOf((params[i].count > 200) ? 200 : params[i].count));
+					}
+					if(params[i].page != null) {
+						builder.appendQueryParameter("page", String.valueOf(params[i].page));
+					}
+					HttpGet get = new HttpGet(builder.build().toString());
+					mConsumer.sign(get);
+					String response = mClient.execute(get, new BasicResponseHandler());
+					array = new JSONArray(response);
+				}
+			} catch (JSONException e) {
+				e.printStackTrace();
+			} catch (OAuthMessageSignerException e) {
+				e.printStackTrace();
+			} catch (OAuthExpectationFailedException e) {
+				e.printStackTrace();
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (OAuthCommunicationException e) {
+				e.printStackTrace();
+			}
+			return array;
+		}
+
+		// This is in the UI thread, so we can mess with the UI
+		protected void onPostExecute(JSONArray array) {
+			mClient.getConnectionManager().shutdown();
+			if(array != null) {
 				try {
-					String authUrl = mProvider.retrieveRequestToken(mConsumer, CALLBACK_URI.toString());
-					Log.d(TAG, "onClick() - AuthUrl: " + authUrl);
-					Log.d(TAG, "onClick() - Request: " + mConsumer.getToken());
-					Log.d(TAG, "onClick() - Secret: " + mConsumer.getTokenSecret());
-					saveRequestInformation(mConsumer.getToken(), mConsumer.getTokenSecret());
-					Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl));
-					this.startActivity(i);
-				} catch (OAuthMessageSignerException e) {
-					e.printStackTrace();
-				} catch (OAuthNotAuthorizedException e) {
-					e.printStackTrace();
-				} catch (OAuthExpectationFailedException e) {
-					e.printStackTrace();
-				} catch (OAuthCommunicationException e) {
+					for(int i = 0; i < array.length(); ++i) {
+						JSONObject status = array.getJSONObject(i);
+						UserStatus s = new UserStatus(status);
+						mHomeStatus.add(s);
+					}
+					mAA.notifyDataSetChanged();
+					
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} else {
-				saveAuthInformation(null, null);
-				mButton.setEnabled(false);
-				mEditor.setEnabled(false);
-				mCB.setChecked(false);
-				mDisplay.setText("");
-			}
-			mCB.setChecked(false); // the oauth callback will set it to the proper state
-		} else if(mButton.equals(v)) {
-			String postString = mEditor.getText().toString();
-			if (postString.length() == 0) {
-				Toast.makeText(this, getText(R.string.tweet_empty),
-						Toast.LENGTH_SHORT).show();
-			} else {
-				new PostTask().execute(postString);
 			}
 		}
 	}
-
-	private void saveRequestInformation(String token, String secret) {
-		// null means to clear the old values
-		SharedPreferences settings = BLOA.this.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-		SharedPreferences.Editor editor = settings.edit();
-		if(token == null) {
-			editor.remove(REQUEST_TOKEN);
-			Log.d(TAG, "Clearing Request Token");
-		}
-		else {
-			editor.putString(REQUEST_TOKEN, token);
-			Log.d(TAG, "Saving Request Token: " + token);
-		}
-		if (secret == null) {
-			editor.remove(REQUEST_SECRET);
-			Log.d(TAG, "Clearing Request Secret");
-		}
-		else {
-			editor.putString(REQUEST_SECRET, secret);
-			Log.d(TAG, "Saving Request Secret: " + secret);
-		}
-		editor.commit();
-		
-	}
-	
-	private void saveAuthInformation(String token, String secret) {
-		// null means to clear the old values
-		SharedPreferences settings = BLOA.this.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-		SharedPreferences.Editor editor = settings.edit();
-		if(token == null) {
-			editor.remove(USER_TOKEN);
-			Log.d(TAG, "Clearing OAuth Token");
-		}
-		else {
-			editor.putString(USER_TOKEN, token);
-			Log.d(TAG, "Saving OAuth Token: " + token);
-		}
-		if (secret == null) {
-			editor.remove(USER_SECRET);
-			Log.d(TAG, "Clearing OAuth Secret");
-		}
-		else {
-			editor.putString(USER_SECRET, secret);
-			Log.d(TAG, "Saving OAuth Secret: " + secret);
-		}
-		editor.commit();
-		
-	}
-	
 }
