@@ -23,12 +23,6 @@
 				<data android:scheme="bloa-app" android:host="twitt" />
 			</intent-filter>
         </activity>
-    	<provider 
-			android:name=".BLOAProvider" 
-			android:authorities="com.example.bloa"
-			android:label="BLOA Provider"
-			android:icon="@drawable/beer_icon"
-		/>
     </application>
     <uses-sdk android:minSdkVersion="4" />
     <uses-permission android:name="android.permission.INTERNET" />
