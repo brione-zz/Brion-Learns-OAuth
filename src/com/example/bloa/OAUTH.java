@@ -4,8 +4,8 @@ import junit.framework.Assert;
 import oauth.signpost.OAuth;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
-import oauth.signpost.basic.DefaultOAuthProvider;
 import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
+import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
 import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
@@ -47,7 +47,7 @@ public class OAUTH extends Activity {
 				Keys.TWITTER_CONSUMER_KEY, 
 				Keys.TWITTER_CONSUMER_SECRET);
 		
-		mProvider = new DefaultOAuthProvider(
+		mProvider = new CommonsHttpOAuthProvider (
 				TWITTER_REQUEST_TOKEN_URL, 
 				TWITTER_ACCESS_TOKEN_URL,
 				TWITTER_AUTHORIZE_URL);
