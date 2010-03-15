@@ -344,6 +344,7 @@ public class BLOA extends ListActivity implements OnClickListener {
 			page = null;
 		}
 		
+		@SuppressWarnings("unused")
 		public TimelineSelector(String u, Long since, Long max, Integer cnt, Integer pg) {
 			url = u;
 			max_id = max;
@@ -363,6 +364,7 @@ public class BLOA extends ListActivity implements OnClickListener {
 			mStatus = status;
 			mUser = status.getJSONObject("user");
 		}
+		@SuppressWarnings("unused")
 		public long getId() {
 			return mStatus.optLong("id", -1);
 		}
@@ -373,6 +375,7 @@ public class BLOA extends ListActivity implements OnClickListener {
 			return getCurrentTweet(mStatus);
 		}
 		public String getCreatedAt() {
+			@SuppressWarnings("unused")
 			Time ret1 = new Time();
 			return mStatus.optString("created_at", getString(R.string.bad_value));
 		}
@@ -439,7 +442,6 @@ public class BLOA extends ListActivity implements OnClickListener {
 					mAA.notifyDataSetChanged();
 					
 				} catch (JSONException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} else {
