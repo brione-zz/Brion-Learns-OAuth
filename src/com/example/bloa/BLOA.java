@@ -11,14 +11,22 @@ import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
 
+import org.apache.http.HttpVersion;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
@@ -80,12 +88,26 @@ public class BLOA extends ListActivity implements OnClickListener {
 
 	LinkedList<UserStatus> mHomeStatus = new LinkedList<UserStatus>();
 	
+	HttpClient mClient;
+	
 	/** Called when the activity is first created. */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.main);
-
+		
+		HttpParams parameters = new BasicHttpParams();
+		HttpProtocolParams.setVersion(parameters, HttpVersion.HTTP_1_1);
+		HttpProtocolParams.setContentCharset(parameters, HTTP.DEFAULT_CONTENT_CHARSET);
+		HttpProtocolParams.setUseExpectContinue(parameters, false);
+		HttpConnectionParams.setTcpNoDelay(parameters, true);
+		HttpConnectionParams.setSocketBufferSize(parameters, 8192);
+		
+		SchemeRegistry schReg = new SchemeRegistry();
+		schReg.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+		ClientConnectionManager tsccm = new ThreadSafeClientConnManager(parameters, schReg);
+		mClient = new DefaultHttpClient(tsccm, parameters);
+		
 		mCB = (CheckBox) this.findViewById(R.id.enable);
 		mCB.setChecked(false);
 		mEditor = (EditText) this.findViewById(R.id.editor);
@@ -115,6 +137,10 @@ public class BLOA extends ListActivity implements OnClickListener {
 			}
 		}
 		new GetCredentialsTask().execute();
+	}
+	
+	protected void onFinish() {
+		mClient.getConnectionManager().shutdown();
 	}
 	
 	@Override
@@ -210,16 +236,14 @@ public class BLOA extends ListActivity implements OnClickListener {
 	private class GetCredentialsTask extends AsyncTask<Void, Void, JSONObject> {
  
 		ProgressDialog authDialog;
-		DefaultHttpClient mClient;
  
 		@Override
 		protected void onPreExecute() {
-			mClient = new DefaultHttpClient();
 			authDialog = ProgressDialog.show(BLOA.this, 
-					getText(R.string.auth_progress_title), 
-					getText(R.string.auth_progress_text), 
-					true,	// indeterminate duration
-					false); // not cancel-able
+				getText(R.string.auth_progress_title), 
+				getText(R.string.auth_progress_text), 
+				true,	// indeterminate duration
+				false); // not cancel-able
 		}
  
 		@Override
@@ -249,7 +273,6 @@ public class BLOA extends ListActivity implements OnClickListener {
  
 		// This is in the UI thread, so we can mess with the UI
 		protected void onPostExecute(JSONObject jso) {
-			mClient.getConnectionManager().shutdown();
 			authDialog.dismiss();
 			mCB.setChecked(jso != null);
 			mButton.setEnabled(jso != null);
@@ -268,11 +291,9 @@ public class BLOA extends ListActivity implements OnClickListener {
 	private class PostTask extends AsyncTask<String, Void, JSONObject> {
  
 		ProgressDialog postDialog;
-		DefaultHttpClient mClient;
  
 		@Override
 		protected void onPreExecute() {
-			mClient = new DefaultHttpClient();
 			postDialog = ProgressDialog.show(BLOA.this, 
 					getText(R.string.tweet_progress_title), 
 					getText(R.string.tweet_progress_text), 
@@ -316,7 +337,6 @@ public class BLOA extends ListActivity implements OnClickListener {
  
 		// This is in the UI thread, so we can mess with the UI
 		protected void onPostExecute(JSONObject jso) {
-			mClient.getConnectionManager().shutdown();
 			postDialog.dismiss();
 			if(jso != null) { // authorization succeeded, the json object contains the user information
 				mEditor.setText("");
@@ -383,13 +403,7 @@ public class BLOA extends ListActivity implements OnClickListener {
 	
 	private class GetTimelineTask extends AsyncTask<TimelineSelector, Void, JSONArray> {
 
-		DefaultHttpClient mClient;
 		
-		@Override
-		protected void onPreExecute() {
-			mClient = new DefaultHttpClient();
-		}
-
 		@Override
 		protected JSONArray doInBackground(TimelineSelector... params) {
 			JSONArray array = null;
@@ -431,7 +445,6 @@ public class BLOA extends ListActivity implements OnClickListener {
 
 		// This is in the UI thread, so we can mess with the UI
 		protected void onPostExecute(JSONArray array) {
-			mClient.getConnectionManager().shutdown();
 			if(array != null) {
 				try {
 					for(int i = 0; i < array.length(); ++i) {
