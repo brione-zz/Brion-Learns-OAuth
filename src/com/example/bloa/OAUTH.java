@@ -60,6 +60,9 @@ public class OAUTH extends Activity {
 		Intent i = this.getIntent();
 		if (i.getData() == null) {
 			try {
+                                // This is really important. If you were able to register your real callback Uri with Twitter, and not some fake Uri
+                                // like I registered when I wrote this example, you need to send null as the callback Uri in this function call. Then
+                                // Twitter will correctly process your callback redirection
 				String authUrl = mProvider.retrieveRequestToken(mConsumer, CALLBACK_URI.toString());
 				saveRequestInformation(mSettings, mConsumer.getToken(), mConsumer.getTokenSecret());
 				this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(authUrl)));
