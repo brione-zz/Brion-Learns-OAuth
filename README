@@ -13,6 +13,8 @@ public class Keys {
 	public static final String TWITTER_CONSUMER_SECRET = "Your Consumer Secret";
 }
 
-This software is the result of the work of many others that I researched and is intended for educational purposes. This software is not intended to be a complete implementation. Unless you have found a BUG in this code, please don't ask me general questions about Signpost, how to get your app running or anything else.
+This software is the result of the work of many others that I researched and is intended for educational purposes. This software is not intended to be a complete implementation. 
+
+Unless find a BUG in this code, please don't ask questions about Signpost, how to get your app running or anything else.
 
 Copyright 2010 - Brion N. Emde
