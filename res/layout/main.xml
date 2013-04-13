@@ -4,74 +4,71 @@
     android:layout_height="fill_parent"
     android:orientation="vertical"
     >
-	<RelativeLayout
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    >
-	    <CheckBox android:id="@+id/enable"
-	    	android:layout_width="wrap_content"
-	    	android:layout_height="wrap_content"
-	    	android:layout_alignParentTop="true"
-	    	android:layout_alignParentLeft="true"
-	    />
-		<TextView android:id="@+id/user"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:layout_toRightOf="@id/enable"
-			android:layout_alignParentRight="true"
-			android:layout_alignParentTop="true"
-			android:layout_alignBaseline="@id/enable"
-			android:layout_gravity="center_vertical|center_horizontal"
-			android:hint="@string/userhint"
-		/>
-	</RelativeLayout>
-	<LinearLayout android:id="@+id/edit_group"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:orientation="vertical"
-	>
-		<TextView
-			android:layout_width="fill_parent"
-			android:layout_height="wrap_content"
-			android:text="@string/label"
-		/>
-		<RelativeLayout 
-			android:orientation="horizontal"
-			android:layout_width="fill_parent"
-			android:layout_height="wrap_content"
-		>
-			<Button android:id="@+id/post"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:text="@string/post"
-				android:enabled="false"
-				android:layout_weight="1"
-				android:layout_alignParentRight="true"
-			/>
-			<EditText android:id="@+id/editor"
-				android:layout_width="fill_parent"
-				android:layout_height="wrap_content"
-				android:hint="@string/tweet"
-				android:enabled="false"
-				android:layout_alignParentLeft="true"
-				android:layout_toLeftOf="@id/post"
-			/>
-		</RelativeLayout>
-		<TextView android:id="@+id/last"
-			android:layout_height="wrap_content"
-			android:layout_width="fill_parent"
-			android:hint="@string/userhint"
-		/>
-	</LinearLayout>
-	<ListView
-		android:id="@android:id/list"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-	/>
-	<TextView
-		android:id="@android:id/empty"
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent"
-		android:hint="@string/userhint"
-	/>
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        >
+        <CheckBox android:id="@+id/enable"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentLeft="true"
+        />
+        <TextView android:id="@+id/user"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/enable"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignBaseline="@id/enable"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:hint="@string/userhint"
+            android:textIsSelectable="true"
+        />
+    </RelativeLayout>
+    <LinearLayout android:id="@+id/edit_group"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+    >
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/label"
+        />
+        <RelativeLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+        >
+            <Button android:id="@+id/post"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/post"
+                android:enabled="false"
+                android:layout_alignParentRight="true"
+            />
+            <EditText android:id="@+id/editor"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/tweet"
+                android:enabled="false"
+                android:layout_alignParentLeft="true"
+                android:layout_toLeftOf="@id/post"
+            />
+        </RelativeLayout>
+        <TextView android:id="@+id/last"
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:hint="@string/userhint"
+            android:textIsSelectable="true"
+        />
+    </LinearLayout>
+    <fragment
+        android:name="com.example.bloa.activities.BloaUserTimelineFragment"
+        android:id="@+id/list_fragment"
+        android:layout_weight="1"
+        android:layout_height="0dp"
+        android:layout_width="match_parent"
+    />
 </LinearLayout>

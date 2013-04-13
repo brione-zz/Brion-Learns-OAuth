@@ -3,27 +3,41 @@
       package="com.example.bloa"
       android:versionCode="1"
       android:versionName="1.0">
-    <application android:icon="@drawable/icon" android:label="@string/app_name">
-        <activity android:name=".BLOA"
-			android:label="@string/app_name"
+    <uses-sdk
+        android:minSdkVersion="9"
+        android:targetSdkVersion="17"
+    />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application
+        android:icon="@drawable/icon"
+        android:label="@string/app_name"
+        android:allowBackup="false"
+    android:name="App">
+        <provider
+            android:name=".data.BloaProvider"
+            android:authorities="com.example.bloa"
+            android:exported="false"
+        />
+        <activity android:name="com.example.bloa.activities.BloaActivity"
+            android:label="@string/app_name"
         >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-				<category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        <activity android:name=".OAUTH"
-			android:label="@string/oauth_name"
+            </activity>
+        <activity
+            android:name=".activities.OAuthActivity"
+            android:launchMode="singleTask"
         >
-			<intent-filter>
-				<action android:name="android.intent.action.VIEW" />
-				<category android:name="android.intent.category.DEFAULT" />
-				<category android:name="android.intent.category.BROWSABLE" />
-				<data android:scheme="bloa-app" android:host="twitt" />
-			</intent-filter>
+            <!-- TODO: Put your callback components into the data element below -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="bloa-app" android:host="twitt" />
+            </intent-filter>
         </activity>
     </application>
-    <uses-sdk android:minSdkVersion="4" />
-    <uses-permission android:name="android.permission.INTERNET" />
-</manifest> 
+</manifest>
