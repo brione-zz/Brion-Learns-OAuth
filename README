@@ -1,20 +1,32 @@
-This is an example of using the Signpost OAuth library in and Android application. It provides the basics of authentication via the Twitter OAuth service, then allows the student to enter Twitter messages into the authenticated user's stream.
+This is an example of using the Signpost OAuth library in and Android application. It provides the 
+basics of authentication via the Twitter OAuth service, then allows the student to enter Twitter 
+messages into the authenticated user's stream.
 
-You have to register your application with Twitter to get the Consumer Key and Secret. This has changed recently, so there are instructions for "old" app keys where there was no way to register a real callback address with Twitter, and the new method, where the Twitter application registration page prompts you to email them to get your application's callback address registered.
+You have to register your application with Twitter to get the Consumer Key and Secret. I still (recently) had to
+enter a real, actual URL as the app's callback on the Twitter dev site. But you still pass the app's callback during
+the OAuth process, just like always.
 
-The way that callbacks are handled in the software differs, depending of whether the callback address you register is for your app, or was a space-filling external website address (like what I did). 
+You will need to supply a MyKeysProvider.java class or rename the default one that looks something like this:
 
-I will be addressing this issue very soon in the code and will end up with two branches, over the current muddle.
+public class DefaultKeysProvider implements KeysProvider {
 
-You will need to supply a Keys.java class that looks something like this:
+    @Override
+    public String getKey1() {
+        // TODO: Set this to your App's Consumer key
+        return "Your App's Consumer Key";
+    }
 
-public class Keys {
-	public static final String TWITTER_CONSUMER_KEY = "Your Consumer Key";
-	public static final String TWITTER_CONSUMER_SECRET = "Your Consumer Secret";
+    @Override
+    public String getKey2() {
+        // TODO: Set this to your App's Consumer secret
+        return "App Consumer Secret";
+    }
 }
 
-This software is the result of the work of many others that I researched and is intended for educational purposes. This software is not intended to be a complete implementation. 
+This software is the result of the work of many others that I researched and is intended for educational 
+purposes. This software is not intended to be a complete implementation. 
 
-Unless find a BUG in this code, please don't ask questions about Signpost, how to get your app running or anything else.
+Unless find a BUG in this code, please don't ask questions about Signpost, how to get your app running or 
+anything else.
 
-Copyright 2010 - Brion N. Emde
+Copyright 2013 - Brion N. Emde
