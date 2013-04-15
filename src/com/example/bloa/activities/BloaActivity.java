@@ -17,8 +17,6 @@ package com.example.bloa.activities;
 
 import java.util.LinkedList;
 
-import javax.net.ssl.HttpsURLConnection;
-
 import oauth.signpost.OAuthConsumer;
 
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -216,16 +214,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
     }
 
-    private void makeNewUserTimelineRecord(ContentValues values) {
-        try {
-            getContentResolver().insert(UserStatusRecords.CONTENT_URI, values);
-            Log.d(TAG, "makeNewUserStatusRecord: " + values.toString());
-        } catch (Exception e) {
-            Log.e(TAG, "Exception adding users status record", e);
-        }
-    }
-
-
     class PostButtonClickListener implements OnClickListener {
         @Override
         public void onClick(View v) {
@@ -276,7 +264,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         protected JSONObject doInBackground(String... params) {
 
             JSONObject jso = null;
-            HttpsURLConnection connection = null;
             try {
 
                 HttpPost post = new HttpPost(App.STATUSES_URL_STRING);
@@ -291,10 +278,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 makeNewUserStatusRecord(parseTimelineJSONObject(jso));
             } catch (Exception e) {
                 Log.e(TAG, "Post Task Exception", e);
-            } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                }
             }
             return jso;
         }
@@ -302,12 +285,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         // This is in the UI thread, so we can mess with the UI
         protected void onPostExecute(JSONObject jso) {
             postDialog.dismiss();
-            if(jso != null) { // authorization succeeded, the json object contains the user information
-                mEditor.setText("");
-                // XXX: Fix this mLast.setText(UserStatus.getCurrentTweet(jso));
-            } else {
-                mLast.setText(getText(R.string.tweet_error));
-            }
         }
     }
 
@@ -345,7 +322,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         @Override
         protected JSONArray doInBackground(TimelineSelector... params) {
             JSONArray array = null;
-            HttpsURLConnection connection = null;
             try {
                 Uri sUri = Uri.parse(params[0].url);
                 Uri.Builder builder = sUri.buildUpon();
@@ -375,10 +351,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 getContentResolver().bulkInsert(UserStatusRecords.CONTENT_URI, values);
             } catch (Exception e) {
                 Log.e(TAG, "Get Timeline Exception", e);
-            } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                }
             }
             return array;
         }
