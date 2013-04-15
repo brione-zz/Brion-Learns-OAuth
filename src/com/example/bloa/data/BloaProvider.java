@@ -131,6 +131,31 @@ public class BloaProvider extends ContentProvider {
     }
 
     @Override
+    public String getType(Uri uri) {
+        switch (sUriMatcher.match(uri)) {
+        case USER_STATUS_RECORDS:
+            return UserStatusRecords.CONTENT_TYPE;
+        case USER_STATUS_RECORD_ID:
+            return UserStatusRecord.CONTENT_ITEM_TYPE;
+        default:
+            throw new IllegalArgumentException("Unknown URI " + uri);
+        }
+    }
+
+    @Override
+    public int bulkInsert(Uri uri, ContentValues[] values) {
+        int count = 0;
+        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        db.beginTransaction();
+        count = super.bulkInsert(uri, values);
+        if (count == values.length) {
+            db.setTransactionSuccessful();
+        }
+        db.endTransaction();
+        return count;
+    }
+
+    @Override
     public Cursor query(Uri uri, String[] projection, String selection,
             String[] selectionArgs, String sortOrder) {
 
@@ -161,18 +186,6 @@ public class BloaProvider extends ContentProvider {
         // changes
         c.setNotificationUri(mCR, uri);
         return c;
-    }
-
-    @Override
-    public String getType(Uri uri) {
-        switch (sUriMatcher.match(uri)) {
-        case USER_STATUS_RECORDS:
-            return UserStatusRecords.CONTENT_TYPE;
-        case USER_STATUS_RECORD_ID:
-            return UserStatusRecord.CONTENT_ITEM_TYPE;
-        default:
-            throw new IllegalArgumentException("Unknown URI " + uri);
-        }
     }
 
     @Override

@@ -366,11 +366,13 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 array = new JSONArray(response);
                 // Delete the existing timeline
                 getContentResolver().delete(UserStatusRecords.CONTENT_URI, App.USER_TIMELINE_QUERY_WHERE, null);
+                ContentValues[] values = new ContentValues[array.length()];
                 for(int i = 0; i < array.length(); ++i) {
                     JSONObject status = array.getJSONObject(i);
                     Log.d(TAG, status.toString());
-                    makeNewUserTimelineRecord(parseTimelineJSONObject(status));
+                    values[i] = parseTimelineJSONObject(status);
                 }
+                getContentResolver().bulkInsert(UserStatusRecords.CONTENT_URI, values);
             } catch (Exception e) {
                 Log.e(TAG, "Get Timeline Exception", e);
             } finally {
