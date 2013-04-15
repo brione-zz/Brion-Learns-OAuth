@@ -3,12 +3,11 @@ package com.example.bloa;
 import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
-import oauth.signpost.basic.DefaultOAuthConsumer;
-import oauth.signpost.basic.DefaultOAuthProvider;
+import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
+import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
 import android.app.Application;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Build;
 import android.util.Log;
 
 import com.example.bloa.data.UserStatusRecords.UserStatusRecord;
@@ -136,15 +135,11 @@ public class App extends Application {
         // Only works with my code unless you create your own MyKeysProvider class
         this.setKeysProvider(new MyKeysProvider());
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.FROYO
-                || Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-            System.setProperty("http.keepAlive", "false");
-        }
-        mConsumer = new DefaultOAuthConsumer(
+        mConsumer = new CommonsHttpOAuthConsumer(
                 getKeysProvider().getKey1(),
                 getKeysProvider().getKey2());
 
-        mProvider = new DefaultOAuthProvider(
+        mProvider = new CommonsHttpOAuthProvider(
             App.TWITTER_REQUEST_TOKEN_URL,
             App.TWITTER_ACCESS_TOKEN_URL,
             App.TWITTER_AUTHORIZE_URL);

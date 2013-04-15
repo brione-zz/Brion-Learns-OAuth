@@ -1,18 +1,20 @@
 package com.example.bloa.activities;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.util.LinkedList;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import oauth.signpost.OAuthConsumer;
 
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -110,12 +112,22 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         (new GetCredentialsTask()).execute();
     }
 
+    // These parameters are needed to talk to the messaging service
+    public HttpParams getParams() {
+        // Tweak further as needed for your app
+        HttpParams params = new BasicHttpParams();
+        // set this to false, or else you'll get an Expectation Failed: error
+        HttpProtocolParams.setUseExpectContinue(params, false);
+        return params;
+    }
+
     //----------------------------
     // This task is run on every onResume(), to make sure the current credentials are valid.
     // This is probably overkill for a non-educational program
     class GetCredentialsTask extends AsyncTask<Void, Void, Boolean> {
 
         ProgressDialog authDialog;
+        DefaultHttpClient mClient = new DefaultHttpClient();
 
         @Override
         protected void onPreExecute() {
@@ -129,29 +141,15 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         @Override
         protected Boolean doInBackground(Void... arg0) {
             JSONObject jso = null;
-            HttpsURLConnection connection = null;
+            HttpGet get = new HttpGet(App.VERIFY_URL_STRING);
             try {
-                URL url = new URL(App.VERIFY_URL_STRING);
-                connection = (HttpsURLConnection) url.openConnection();
-                connection.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
-                mConsumer.sign(connection);
-                connection.connect();
-                int code = connection.getResponseCode();
-                Log.d(TAG,  "Response code: " + code);
-                if (code != 200) {
-                    return false;
-                }
-                String jsonResponse = readInput(connection.getInputStream());
-                Log.d(TAG, "Auth response: " + jsonResponse);
-                jso = new JSONObject(jsonResponse);
-                makeNewUserStatusRecord(jso);
+                mConsumer.sign(get);
+                String response = mClient.execute(get, new BasicResponseHandler());
+                jso = new JSONObject(response);
+                makeNewUserStatusRecord(parseVerifyUserJSONObject(jso));
                 return true;
             } catch (Exception e) {
                 Log.e(TAG, "Exception confirming user", e);
-            } finally {
-                if (connection != null) {
-                    connection.disconnect();
-                }
             }
             return false;
         }
@@ -170,27 +168,31 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
     }
 
-    private String readInput(InputStream is) throws IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(is));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = in.readLine()) != null) {
-            sb.append(line);
-        }
-        in.close();
-        return sb.toString();
+    private ContentValues parseVerifyUserJSONObject(JSONObject object) throws Exception {
+        ContentValues values = new ContentValues();
+        values.put(UserStatusRecord.USER_NAME, object.getString("name"));
+        values.put(UserStatusRecord.RECORD_ID, object.getInt("id_str"));
+        values.put(UserStatusRecord.USER_CREATED_DATE, object.getString("created_at"));
+        JSONObject status = object.getJSONObject("status");
+        values.put(UserStatusRecord.USER_TEXT, status.getString("text"));
+        return values;
     }
 
-    private void makeNewUserStatusRecord(JSONObject object) {
+    private ContentValues parseTimelineJSONObject(JSONObject object) throws Exception {
+        ContentValues values = new ContentValues();
+        JSONObject user = object.getJSONObject("user");
+        values.put(UserStatusRecord.USER_NAME, user.getString("name"));
+        values.put(UserStatusRecord.RECORD_ID, user.getInt("id_str"));
+        values.put(UserStatusRecord.USER_CREATED_DATE, object.getString("created_at"));
+        values.put(UserStatusRecord.USER_TEXT, object.getString("text"));
+        return values;
+    }
+
+    private void makeNewUserStatusRecord(ContentValues values) {
         // Delete any existing records for user
         getContentResolver().delete(UserStatusRecords.CONTENT_URI, App.USER_STATUS_QUERY_WHERE, null);
         try {
-            ContentValues values = new ContentValues();
-            values.put(UserStatusRecord.USER_NAME, object.getString("name"));
-            values.put(UserStatusRecord.RECORD_ID, object.getInt("id_str"));
-            values.put(UserStatusRecord.USER_CREATED_DATE, object.getString("created_at"));
-            JSONObject status = object.getJSONObject("status");
-            values.put(UserStatusRecord.USER_TEXT, status.getString("text"));
+            // Distinguish this as a User Status singleton, regardless of origin
             values.put(UserStatusRecord.LATEST_STATUS, "true");
             getContentResolver().insert(UserStatusRecords.CONTENT_URI, values);
             Log.d(TAG, "makeNewUserStatusRecord: " + values.toString());
@@ -198,6 +200,16 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             Log.e(TAG, "Exception adding users status record", e);
         }
     }
+
+    private void makeNewUserTimelineRecord(ContentValues values) {
+        try {
+            getContentResolver().insert(UserStatusRecords.CONTENT_URI, values);
+            Log.d(TAG, "makeNewUserStatusRecord: " + values.toString());
+        } catch (Exception e) {
+            Log.e(TAG, "Exception adding users status record", e);
+        }
+    }
+
 
     class PostButtonClickListener implements OnClickListener {
         @Override
@@ -233,6 +245,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     class PostTask extends AsyncTask<String, Void, JSONObject> {
 
         ProgressDialog postDialog;
+        DefaultHttpClient mClient = new DefaultHttpClient();
+
 
         @Override
         protected void onPreExecute() {
@@ -250,28 +264,16 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             HttpsURLConnection connection = null;
             try {
 
-                URL url = new URL(App.STATUSES_URL_STRING);
-
-                connection = (HttpsURLConnection) url.openConnection();
-
-                connection.setRequestProperty("User-Agent","Mozilla/5.0 ( compatible ) ");
-                connection.setDoOutput(true);
-
-                mConsumer.sign(connection);
-
-                //Send request
-                OutputStream wr = connection.getOutputStream ();
-                wr.write(("status=" + params[0].substring(0, Math.min(params[0].length(), 139))).getBytes("UTF-8"));
-                wr.flush();
+                HttpPost post = new HttpPost(App.STATUSES_URL_STRING);
+                LinkedList<BasicNameValuePair> out = new LinkedList<BasicNameValuePair>();
+                out.add(new BasicNameValuePair("status", params[0]));
+                post.setEntity(new UrlEncodedFormEntity(out, HTTP.UTF_8));
+                post.setParams(getParams());
                 // sign the request to authenticate
-                connection.connect();
-                int status = connection.getResponseCode();
-                Log.d(TAG, "Post Message response: " + status);
-                if (status == 200) {
-                    InputStream in = new BufferedInputStream(connection.getInputStream());
-                    String stuff = in.toString();
-                    jso = new JSONObject(stuff);
-                }
+                mConsumer.sign(post);
+                String response = mClient.execute(post, new BasicResponseHandler());
+                jso = new JSONObject(response);
+                makeNewUserStatusRecord(parseTimelineJSONObject(jso));
             } catch (Exception e) {
                 Log.e(TAG, "Post Task Exception", e);
             } finally {
@@ -323,6 +325,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
     class GetTimelineTask extends AsyncTask<TimelineSelector, Void, JSONArray> {
 
+        DefaultHttpClient mClient = new DefaultHttpClient();
 
         @Override
         protected JSONArray doInBackground(TimelineSelector... params) {
@@ -342,19 +345,16 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 if(params[0].page != null) {
                     builder.appendQueryParameter("page", String.valueOf(params[0].page));
                 }
-                URL url = new URL(builder.build().toString());
-                connection = (HttpsURLConnection) url.openConnection();
-                mConsumer.sign(connection);
-                connection.connect();
-                String jsonResponse = readInput(connection.getInputStream());
-                Log.d(TAG, "Auth response: " + jsonResponse);
-                array = new JSONArray(jsonResponse);
+                HttpGet get = new HttpGet(builder.build().toString());
+                mConsumer.sign(get);
+                String response = mClient.execute(get, new BasicResponseHandler());
+                array = new JSONArray(response);
                 // Delete the existing timeline
                 getContentResolver().delete(UserStatusRecords.CONTENT_URI, App.USER_TIMELINE_QUERY_WHERE, null);
                 for(int i = 0; i < array.length(); ++i) {
                     JSONObject status = array.getJSONObject(i);
                     Log.d(TAG, status.toString());
-                    makeNewUserTimelineRecord(status);
+                    makeNewUserTimelineRecord(parseTimelineJSONObject(status));
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Get Timeline Exception", e);
@@ -366,22 +366,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             return array;
         }
     }
-
-    private void makeNewUserTimelineRecord(JSONObject object) {
-        try {
-            ContentValues values = new ContentValues();
-            JSONObject user = object.getJSONObject("user");
-            values.put(UserStatusRecord.USER_NAME, user.getString("name"));
-            values.put(UserStatusRecord.RECORD_ID, user.getInt("id_str"));
-            values.put(UserStatusRecord.USER_CREATED_DATE, object.getString("created_at"));
-            values.put(UserStatusRecord.USER_TEXT, object.getString("text"));
-            getContentResolver().insert(UserStatusRecords.CONTENT_URI, values);
-            Log.d(TAG, "makeNewUserStatusRecord: " + values.toString());
-        } catch (Exception e) {
-            Log.e(TAG, "Exception adding users status record", e);
-        }
-    }
-
 
     @Override
     public Loader<Cursor> onCreateLoader(int loaderId, Bundle savedValues) {
