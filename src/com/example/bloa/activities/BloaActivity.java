@@ -120,9 +120,9 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             // If we find some we update the consumer with them
             if(!(mToken == null || mSecret == null)) {
                 mConsumer.setTokenWithSecret(mToken, mSecret);
+                (new GetCredentialsTask()).execute();
             }
         }
-        (new GetCredentialsTask()).execute();
     }
 
     // These parameters are needed to talk to the messaging service
