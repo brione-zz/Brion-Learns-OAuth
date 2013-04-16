@@ -32,11 +32,12 @@ import com.example.bloa.App;
 import com.example.bloa.R;
 
 public class OAuthActivity extends Activity {
-    private static final String TAG = "OAUTH";
+    private static final String TAG = OAuthActivity.class.toString();
 
     SharedPreferences mSettings;
     OAuthProvider mProvider;
     OAuthConsumer mConsumer;
+    Intent mIntent;
     App mApp;
 
     @Override
@@ -53,14 +54,49 @@ public class OAuthActivity extends Activity {
         Assert.assertNotNull(mProvider);
         Assert.assertNotNull(mConsumer);
 
-
-        Intent i = this.getIntent();
-        if (i.getData() == null) {
+        mIntent = this.getIntent();
+        if (mIntent.getData() == null) {
             try {
                 (new RetrieveRequestTokenTask()).execute(new Void[0]);
             } catch (Exception e) {
                 Log.e(TAG, "OAuthException: " + e.getMessage(), e);
                 throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @Override
+    public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        Log.d(TAG, "onNewIntent() called");
+        Uri uri = intent.getData();
+        if (uri != null) {
+            // Get the stuff we saved in the async task so we can confirm that it all matches up
+
+            String token = mSettings.getString(App.REQUEST_TOKEN, null);
+            String secret = mSettings.getString(App.REQUEST_SECRET, null);
+
+            // Intent i = new Intent(this, BloaActivity.class); // Currently how we get back to the main activity
+
+            if (token == null || secret == null) {
+                throw new IllegalStateException("We should have saved!");
+            }
+            String otoken = uri.getQueryParameter(OAuth.OAUTH_TOKEN);
+            if (otoken != null) {
+                // This is a sanity check which should never fail - hence the assertion
+                Assert.assertEquals(otoken, mConsumer.getToken());
+
+                // We send out and save the request token, but the secret is not the same as the verifier
+                // Apparently, the verifier is decoded to get the secret, which is then compared - crafty
+                String verifier = uri.getQueryParameter(OAuth.OAUTH_VERIFIER);
+
+                // We do this in a task now or get an automatic crash
+                (new RetrieveAccessTokenTask()).execute(verifier);
+            } else {
+                String denied = uri.getQueryParameter("denied");
+                Log.e(TAG, "Access denied or canceled. Token returned is: " + denied);
+                finish();
             }
         }
     }
@@ -120,32 +156,4 @@ public class OAuthActivity extends Activity {
         }
     }
 
-    @Override
-    public void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-
-        Log.d(TAG, "onNewIntent() called");
-        Uri uri = intent.getData();
-        if (uri != null) {
-            // Get the stuff we saved in the async task so we can confirm that it all matches up
-            String token = mSettings.getString(App.REQUEST_TOKEN, null);
-            String secret = mSettings.getString(App.REQUEST_SECRET, null);
-
-            // Intent i = new Intent(this, BloaActivity.class); // Currently how we get back to the main activity
-
-            if (token == null || secret == null) {
-                throw new IllegalStateException("We should have saved!");
-            }
-            String otoken = uri.getQueryParameter(OAuth.OAUTH_TOKEN);
-            // This is a sanity check which should never fail - hence the assertion
-            Assert.assertEquals(otoken, mConsumer.getToken());
-
-            // We send out and save the request token, but the secret is not the same as the verifier
-            // Apparently, the verifier is decoded to get the secret, which is then compared - crafty
-            String verifier = uri.getQueryParameter(OAuth.OAUTH_VERIFIER);
-
-            // We do this in a task now or get an automatic crash
-            (new RetrieveAccessTokenTask()).execute(verifier);
-        }
-    }
 }

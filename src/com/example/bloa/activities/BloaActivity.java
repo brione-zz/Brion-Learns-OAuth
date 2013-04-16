@@ -64,7 +64,7 @@ import com.example.bloa.data.UserStatusRecords;
 import com.example.bloa.data.UserStatusRecords.UserStatusRecord;
 
 public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cursor> {
-    public static final String TAG = "BLOA";
+    public static final String TAG = BloaActivity.class.toString();
 
     private CheckBox mCB;
     private EditText mEditor;
@@ -162,7 +162,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 makeNewUserStatusRecord(parseVerifyUserJSONObject(jso));
                 return true;
             } catch (Exception e) {
-                Log.e(TAG, "Exception confirming user", e);
+                // Expected if we don't have the proper credentials saved away
             }
             return false;
         }
@@ -177,8 +177,19 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             if (loggedIn) {
                 TimelineSelector ss = new TimelineSelector(App.HOME_TIMELINE_URL_STRING);
                 new GetTimelineTask().execute(ss);
+            } else {
+                deleteStatusRecord();
+                deleteTimelineRecords();
             }
         }
+    }
+
+    private int deleteTimelineRecords() {
+        return getContentResolver().delete(UserStatusRecords.CONTENT_URI, App.USER_TIMELINE_QUERY_WHERE, null);
+    }
+
+    private void deleteStatusRecord() {
+        getContentResolver().delete(UserStatusRecords.CONTENT_URI, App.USER_STATUS_QUERY_WHERE, null);
     }
 
     private ContentValues parseVerifyUserJSONObject(JSONObject object) throws Exception {
@@ -208,7 +219,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             // Distinguish this as a User Status singleton, regardless of origin
             values.put(UserStatusRecord.LATEST_STATUS, "true");
             getContentResolver().insert(UserStatusRecords.CONTENT_URI, values);
-            Log.d(TAG, "makeNewUserStatusRecord: " + values.toString());
+            // Log.d(TAG, "makeNewUserStatusRecord: " + values.toString());
         } catch (Exception e) {
             Log.e(TAG, "Exception adding users status record", e);
         }
@@ -234,10 +245,12 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 BloaActivity.this.startActivity(new Intent(BloaActivity.this, OAuthActivity.class));
             } else {
                 App.saveAuthInformation(mSettings, null, null);
+                deleteStatusRecord();
+                deleteTimelineRecords();
                 mButton.setEnabled(false);
                 mEditor.setEnabled(false);
-                mCB.setChecked(false);
-                mUser.setText("");
+                mEditor.setText(null);
+                updateUI(null, null);
             }
             mCB.setChecked(false); // the oauth callback will set it to the proper state
         }
@@ -314,7 +327,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
     }
 
-
     class GetTimelineTask extends AsyncTask<TimelineSelector, Void, JSONArray> {
 
         DefaultHttpClient mClient = new DefaultHttpClient();
@@ -341,11 +353,10 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 String response = mClient.execute(get, new BasicResponseHandler());
                 array = new JSONArray(response);
                 // Delete the existing timeline
-                getContentResolver().delete(UserStatusRecords.CONTENT_URI, App.USER_TIMELINE_QUERY_WHERE, null);
                 ContentValues[] values = new ContentValues[array.length()];
                 for(int i = 0; i < array.length(); ++i) {
                     JSONObject status = array.getJSONObject(i);
-                    Log.d(TAG, status.toString());
+                    // Log.d(TAG, status.toString());
                     values[i] = parseTimelineJSONObject(status);
                 }
                 getContentResolver().bulkInsert(UserStatusRecords.CONTENT_URI, values);
@@ -367,22 +378,27 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
         // We got something but it might be empty
+        String name = null, last = null;
         if (cursor.moveToFirst()) {
-            mUser.setText(cursor.getString(App.IDX_USER_STATUS_USER_NAME));
-            mLast.setText(cursor.getString(App.IDX_USER_STATUS_USER_TEXT));
+            name = cursor.getString(App.IDX_USER_STATUS_USER_NAME);
+            last = cursor.getString(App.IDX_USER_STATUS_USER_TEXT);
+        }
+        updateUI(name, last);
+    }
 
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        updateUI(null, null);
+    }
+
+    private void updateUI(String userName, String lastMessage) {
+        if (userName != null && lastMessage != null) {
+            mUser.setText(userName);
+            mLast.setText(lastMessage);
         } else {
             mUser.setText(getString(R.string.userhint));
             mLast.setText(getString(R.string.userhint));
         }
-
-
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> arg0) {
-        mUser.setText(getString(R.string.userhint));
-        mLast.setText(getString(R.string.userhint));
     }
 
     @Override
