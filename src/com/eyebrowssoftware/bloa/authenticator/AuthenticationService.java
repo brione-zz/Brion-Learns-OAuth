@@ -29,29 +29,12 @@ public class AuthenticationService extends Service {
 
     private static final String TAG = "AuthenticationService";
 
-    private Authenticator mAuthenticator;
-
-    @Override
-    public void onCreate() {
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            Log.v(TAG, "SampleSyncAdapter Authentication Service started.");
-        }
-        mAuthenticator = new Authenticator(this);
-    }
-
-    @Override
-    public void onDestroy() {
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            Log.v(TAG, "SampleSyncAdapter Authentication Service stopped.");
-        }
-    }
-
     @Override
     public IBinder onBind(Intent intent) {
         if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            Log.v(TAG, "getBinder()...  returning the AccountAuthenticator binder for intent "
+            Log.v(TAG, "getBinder()...  returning the Authenticator binder for intent "
                     + intent);
         }
-        return mAuthenticator.getIBinder();
+        return new Authenticator(this).getIBinder();
     }
 }
