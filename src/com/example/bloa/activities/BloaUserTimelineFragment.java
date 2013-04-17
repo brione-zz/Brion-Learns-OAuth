@@ -48,7 +48,6 @@ public class BloaUserTimelineFragment extends ListFragment implements LoaderCall
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(this.getActivity(),
             android.R.layout.simple_list_item_2, null, App.USER_STATUS_PROJECTION, IDS, 0);
         setListAdapter(adapter);
-        setListShown(false);
         // Set up our cursor loader. It manages the cursors from now on
         getLoaderManager().initLoader(App.LIST_LOADER_ID, null, this);
     }
@@ -62,12 +61,6 @@ public class BloaUserTimelineFragment extends ListFragment implements LoaderCall
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-        if (this.isResumed()) {
-            this.setListShown(true);
-        }
-        else {
-            this.setListShownNoAnimation(true);
-        }
         ((SimpleCursorAdapter) this.getListAdapter()).swapCursor(cursor);
     }
 

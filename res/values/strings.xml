@@ -21,9 +21,11 @@
     <string name="post"><b>Post</b></string>
     <string name="userhint">Not logged in</string>
     <string name="auth_progress_title">Authenticating&#8230;</string>
-    <string name="auth_progress_text">Fetching your profile information.</string>
+    <string name="auth_progress_text">Fetching profile&#8230;</string>
+    <string name="timeline_progress_title">Timeline&#8230;</string>
+    <string name="timeline_progress_text">Fetching Home Timeline&#8230;</string>
     <string name="tweet_progress_title">Sending&#8280;</string>
-    <string name="tweet_progress_text">Posting your Message</string>
+    <string name="tweet_progress_text">Posting message</string>
     <string name="tweet_empty">You have to enter something</string>
     <string name="tweet_error">There was some kind of problem!</string>
     <string name="bad_value">Bad Value</string>

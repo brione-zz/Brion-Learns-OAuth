@@ -32,7 +32,6 @@ import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -139,16 +138,13 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     // This is probably overkill for a non-educational program
     class GetCredentialsTask extends AsyncTask<Void, Void, Boolean> {
 
-        ProgressDialog authDialog;
         DefaultHttpClient mClient = new DefaultHttpClient();
+        ProgressDialogFragment mDialog;
 
         @Override
         protected void onPreExecute() {
-            authDialog = ProgressDialog.show(BloaActivity.this,
-                getText(R.string.auth_progress_title),
-                getText(R.string.auth_progress_text),
-                true,   // indeterminate duration
-                false); // not cancelable
+            mDialog = ProgressDialogFragment.newInstance(R.string.auth_progress_title, R.string.auth_progress_text);
+            mDialog.show(getSupportFragmentManager(), "auth");
         }
 
         @Override
@@ -170,7 +166,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         // This is in the UI thread, so we can mess with the UI
         @Override
         protected void onPostExecute(Boolean loggedIn) {
-            authDialog.dismiss();
+            mDialog.dismiss();
             mCB.setChecked(loggedIn);
             mButton.setEnabled(loggedIn);
             mEditor.setEnabled(loggedIn);
@@ -260,17 +256,14 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     // This task posts a message to your message queue on the service.
     class PostTask extends AsyncTask<String, Void, JSONObject> {
 
-        ProgressDialog postDialog;
+        ProgressDialogFragment mDialog;
         DefaultHttpClient mClient = new DefaultHttpClient();
 
 
         @Override
         protected void onPreExecute() {
-            postDialog = ProgressDialog.show(BloaActivity.this,
-                    getText(R.string.tweet_progress_title),
-                    getText(R.string.tweet_progress_text),
-                    true,	// indeterminate duration
-                    false); // not cancel-able
+            mDialog = ProgressDialogFragment.newInstance(R.string.tweet_progress_title, R.string.tweet_progress_text);
+            mDialog.show(getSupportFragmentManager(), "auth");
         }
 
         @Override
@@ -297,7 +290,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
         // This is in the UI thread, so we can mess with the UI
         protected void onPostExecute(JSONObject jso) {
-            postDialog.dismiss();
+            mDialog.dismiss();
+            BloaActivity.this.mEditor.setText(null);
         }
     }
 
@@ -327,12 +321,19 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
     }
 
-    class GetTimelineTask extends AsyncTask<TimelineSelector, Void, JSONArray> {
+    class GetTimelineTask extends AsyncTask<TimelineSelector, Void, Void> {
 
+        ProgressDialogFragment mDialog;
         DefaultHttpClient mClient = new DefaultHttpClient();
 
         @Override
-        protected JSONArray doInBackground(TimelineSelector... params) {
+        protected void onPreExecute() {
+            mDialog = ProgressDialogFragment.newInstance(R.string.timeline_progress_title, R.string.timeline_progress_text);
+            mDialog.show(BloaActivity.this.getSupportFragmentManager(), "auth");
+        }
+
+        @Override
+        protected Void doInBackground(TimelineSelector... params) {
             JSONArray array = null;
             try {
                 Uri sUri = Uri.parse(params[0].url);
@@ -363,9 +364,15 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             } catch (Exception e) {
                 Log.e(TAG, "Get Timeline Exception", e);
             }
-            return array;
+            return null;
         }
-    }
+
+        // This is in the UI thread, so we can mess with the UI
+        @Override
+        protected void onPostExecute(Void nada) {
+            mDialog.dismiss();
+        }
+}
 
     @Override
     public Loader<Cursor> onCreateLoader(int loaderId, Bundle savedValues) {
@@ -412,6 +419,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.refresh_timeline:
+            deleteTimelineRecords();
             TimelineSelector ss = new TimelineSelector(App.HOME_TIMELINE_URL_STRING);
             new GetTimelineTask().execute(ss);
             return true;
