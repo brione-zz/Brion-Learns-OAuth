@@ -27,16 +27,13 @@ import oauth.signpost.exception.OAuthMessageSignerException;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -147,21 +144,12 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
     }
 
-    // These parameters are needed to talk to the messaging service
-    public HttpParams getParams() {
-        // Tweak further as needed for your app
-        HttpParams params = new BasicHttpParams();
-        // set this to false, or else you'll get an Expectation Failed: error
-        HttpProtocolParams.setUseExpectContinue(params, false);
-        return params;
-    }
-
     //----------------------------
     // This task is run on every onResume(), to make sure the current credentials are valid.
     // This is probably overkill for a non-educational program
     class GetCredentialsTask extends AsyncTask<Void, Void, Boolean> {
 
-        DefaultHttpClient mClient = new DefaultHttpClient();
+        HttpClient mClient = App.getHttpClient();
         ProgressDialogFragment mDialog;
 
         @Override
@@ -287,7 +275,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     class PostTask extends AsyncTask<String, Void, Void> {
 
         ProgressDialogFragment mDialog;
-        DefaultHttpClient mClient = new DefaultHttpClient();
+        HttpClient mClient = App.getHttpClient();
 
 
         @Override
@@ -306,7 +294,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 LinkedList<BasicNameValuePair> out = new LinkedList<BasicNameValuePair>();
                 out.add(new BasicNameValuePair("status", params[0]));
                 post.setEntity(new UrlEncodedFormEntity(out, HTTP.UTF_8));
-                post.setParams(getParams());
                 // sign the request to authenticate
                 mConsumer.sign(post);
                 String response = mClient.execute(post, new BasicResponseHandler());
@@ -380,7 +367,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     class GetTimelineTask extends AsyncTask<TimelineSelector, Void, Void> {
 
         ProgressDialogFragment mDialog;
-        DefaultHttpClient mClient = new DefaultHttpClient();
+        HttpClient mClient = App.getHttpClient();
 
         @Override
         protected void onPreExecute() {

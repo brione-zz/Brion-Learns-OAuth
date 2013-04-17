@@ -37,26 +37,13 @@ import android.widget.TextView;
 
 import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.R;
-import com.eyebrowssoftware.bloa.client.NetworkUtilities;
 
 /**
  * Activity which displays login screen to the user.
  */
 public class AuthenticatorActivity extends AccountAuthenticatorActivity {
-    /** The Intent flag to confirm credentials. */
-    public static final String PARAM_CONFIRM_CREDENTIALS = "confirmCredentials";
-
-    /** The Intent extra to store password. */
-    public static final String PARAM_PASSWORD = "password";
-
-    /** The Intent extra to store username. */
-    public static final String PARAM_USERNAME = "username";
-
-    /** The Intent extra to store username. */
-    public static final String PARAM_AUTHTOKEN_TYPE = "authtokenType";
-
-    /** The tag used to log to adb console. */
     private static final String TAG = "AuthenticatorActivity";
+
     private AccountManager mAccountManager;
 
     /** Keep track of the login task so can cancel it if requested */
@@ -99,9 +86,9 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
         mAccountManager = AccountManager.get(this);
         Log.i(TAG, "loading data from Intent");
         final Intent intent = getIntent();
-        mUsername = intent.getStringExtra(PARAM_USERNAME);
+        mUsername = intent.getStringExtra(Constants.PARAM_USERNAME);
         mRequestNewAccount = mUsername == null;
-        mConfirmCredentials = intent.getBooleanExtra(PARAM_CONFIRM_CREDENTIALS, false);
+        mConfirmCredentials = intent.getBooleanExtra(Constants.PARAM_CONFIRM_CREDENTIALS, false);
         Log.i(TAG, "    request new: " + mRequestNewAccount);
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
         setContentView(R.layout.login_activity);
@@ -300,7 +287,8 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity {
             // We do the actual work of authenticating the user
             // in the NetworkUtilities class.
             try {
-                return NetworkUtilities.authenticate(mUsername, mPassword);
+                // TODO: this goes away
+                return null; // NetworkUtilities.authenticate(mUsername, mPassword);
             } catch (Exception ex) {
                 Log.e(TAG, "UserLoginTask.doInBackground: failed to authenticate");
                 Log.i(TAG, ex.toString());

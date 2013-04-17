@@ -17,6 +17,21 @@
 package com.eyebrowssoftware.bloa.authenticator;
 
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.message.BasicNameValuePair;
+
 import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
@@ -28,8 +43,8 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.eyebrowssoftware.bloa.App;
 import com.eyebrowssoftware.bloa.Constants;
-import com.eyebrowssoftware.bloa.client.NetworkUtilities;
 
 /**
  * This class is an implementation of AbstractAccountAuthenticator for
@@ -103,7 +118,7 @@ class Authenticator extends AbstractAccountAuthenticator {
         final AccountManager am = AccountManager.get(mContext);
         final String password = am.getPassword(account);
         if (password != null) {
-            final String authToken = NetworkUtilities.authenticate(account.name, password);
+            final String authToken = authenticate(account.name, password);
             if (!TextUtils.isEmpty(authToken)) {
                 final Bundle result = new Bundle();
                 result.putString(AccountManager.KEY_ACCOUNT_NAME, account.name);
@@ -117,12 +132,62 @@ class Authenticator extends AbstractAccountAuthenticator {
         // need to re-prompt them for their credentials. We do that by creating
         // an intent to display our AuthenticatorActivity panel.
         final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
-        intent.putExtra(AuthenticatorActivity.PARAM_USERNAME, account.name);
-        intent.putExtra(AuthenticatorActivity.PARAM_AUTHTOKEN_TYPE, authTokenType);
+        intent.putExtra(Constants.PARAM_USERNAME, account.name);
+        intent.putExtra(Constants.PARAM_AUTHTOKEN_TYPE, authTokenType);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
         final Bundle bundle = new Bundle();
         bundle.putParcelable(AccountManager.KEY_INTENT, intent);
         return bundle;
+    }
+    /**
+     * Connects to the SampleSync test server, authenticates the provided
+     * username and password.
+     *
+     * @param username The server account username
+     * @param password The server account password
+     * @return String The authentication token returned by the server (or null)
+     */
+    private static String authenticate(String username, String password) {
+
+        final HttpResponse resp;
+        final ArrayList<NameValuePair> params = new ArrayList<NameValuePair>();
+        params.add(new BasicNameValuePair("name", username));
+        params.add(new BasicNameValuePair("secret", password));
+        final HttpEntity entity;
+        try {
+            entity = new UrlEncodedFormEntity(params);
+        } catch (final UnsupportedEncodingException e) {
+            // this should never happen.
+            throw new IllegalStateException(e);
+        }
+        Log.i(TAG, "Authenticating to: " + "uri");
+        final HttpPost post = new HttpPost("uri");
+        post.addHeader(entity.getContentType());
+        post.setEntity(entity);
+        try {
+            resp = App.getHttpClient().execute(post);
+            String authToken = null;
+            if (resp.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                InputStream istream = (resp.getEntity() != null) ? resp.getEntity().getContent()
+                        : null;
+                if (istream != null) {
+                    BufferedReader ireader = new BufferedReader(new InputStreamReader(istream));
+                    authToken = ireader.readLine().trim();
+                }
+            }
+            if ((authToken != null) && (authToken.length() > 0)) {
+                Log.v(TAG, "Successful authentication");
+                return authToken;
+            } else {
+                Log.e(TAG, "Error authenticating" + resp.getStatusLine());
+                return null;
+            }
+        } catch (final IOException e) {
+            Log.e(TAG, "IOException when getting authtoken", e);
+            return null;
+        } finally {
+            Log.v(TAG, "getAuthtoken completing");
+        }
     }
 
     @Override
