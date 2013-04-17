@@ -71,4 +71,18 @@ public class Constants {
     public static final int IDX_USER_STATUS_CREATED_DATE = 5;
     public static final int IDX_USER_STATUS_LATEST_STATUS = 6;
 
+    public static final int HTTP_REQUEST_TIMEOUT_MS = 30 * 1000;
+
+    /** The Intent flag to confirm credentials. */
+    public static final String PARAM_CONFIRM_CREDENTIALS = "confirmCredentials";
+
+    /** The Intent extra to store password. */
+    public static final String PARAM_PASSWORD = "password";
+
+    /** The Intent extra to store username. */
+    public static final String PARAM_USERNAME = "username";
+
+    /** The Intent extra to store username. */
+    public static final String PARAM_AUTHTOKEN_TYPE = "authtokenType";
+
 }
