@@ -15,11 +15,19 @@
  */
 package com.eyebrowssoftware.bloa.activities;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 
 import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
+import oauth.signpost.exception.OAuthCommunicationException;
+import oauth.signpost.exception.OAuthExpectationFailedException;
+import oauth.signpost.exception.OAuthMessageSignerException;
 
+import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -31,6 +39,7 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.accounts.Account;
@@ -168,9 +177,14 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             try {
                 mConsumer.sign(get);
                 String response = mClient.execute(get, new BasicResponseHandler());
-                jso = new JSONObject(response);
-                makeNewUserStatusRecord(parseVerifyUserJSONObject(jso));
-                return true;
+                if (response != null) {
+                    jso = new JSONObject(response);
+                    makeNewUserStatusRecord(parseVerifyUserJSONObject(jso));
+                    return true;
+                } else {
+                    Log.e(TAG, "PostTask: null response text");
+                    throw new IllegalStateException("Expected some text in the Http response");
+                }
             } catch (Exception e) {
                 // Expected if we don't have the proper credentials saved away
             }
@@ -180,6 +194,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         // This is in the UI thread, so we can mess with the UI
         @Override
         protected void onPostExecute(Boolean loggedIn) {
+            super.onPostExecute(loggedIn);
+
             mDialog.dismiss();
             mCB.setChecked(loggedIn);
             mButton.setEnabled(loggedIn);
@@ -202,7 +218,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         getContentResolver().delete(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_QUERY_WHERE, null);
     }
 
-    private ContentValues parseVerifyUserJSONObject(JSONObject object) throws Exception {
+    private ContentValues parseVerifyUserJSONObject(JSONObject object) throws JSONException {
         ContentValues values = new ContentValues();
         values.put(UserStatusRecord.USER_NAME, object.getString("name"));
         values.put(UserStatusRecord.RECORD_ID, object.getInt("id_str"));
@@ -212,7 +228,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         return values;
     }
 
-    private ContentValues parseTimelineJSONObject(JSONObject object) throws Exception {
+    private ContentValues parseTimelineJSONObject(JSONObject object) throws JSONException {
         ContentValues values = new ContentValues();
         JSONObject user = object.getJSONObject("user");
         values.put(UserStatusRecord.USER_NAME, user.getString("name"));
@@ -268,7 +284,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
     //----------------------------
     // This task posts a message to your message queue on the service.
-    class PostTask extends AsyncTask<String, Void, JSONObject> {
+    class PostTask extends AsyncTask<String, Void, Void> {
 
         ProgressDialogFragment mDialog;
         DefaultHttpClient mClient = new DefaultHttpClient();
@@ -281,7 +297,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
 
         @Override
-        protected JSONObject doInBackground(String... params) {
+        protected Void doInBackground(String... params) {
 
             JSONObject jso = null;
             try {
@@ -294,16 +310,42 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 // sign the request to authenticate
                 mConsumer.sign(post);
                 String response = mClient.execute(post, new BasicResponseHandler());
-                jso = new JSONObject(response);
-                makeNewUserStatusRecord(parseTimelineJSONObject(jso));
-            } catch (Exception e) {
-                Log.e(TAG, "Post Task Exception", e);
+                if (response != null) {
+                    jso = new JSONObject(response);
+                    makeNewUserStatusRecord(parseTimelineJSONObject(jso));
+                } else {
+                    Log.e(TAG, "PostTask: null response text");
+                    throw new IllegalStateException("Expected some text in the Http response");
+                }
+            } catch (HttpResponseException e) {
+                int status = e.getStatusCode();
+                if (status == HttpStatus.SC_UNAUTHORIZED) {
+                    // TODO: The user secret is invalid, so we've got to invalidate it in the account
+                    Log.e(TAG, "Unauthorized status returned: User secret needs to be invalidated in the account", e);
+                } else {
+                    e.printStackTrace();
+                }
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            } catch (OAuthMessageSignerException e) {
+                e.printStackTrace();
+            } catch (OAuthExpectationFailedException e) {
+                e.printStackTrace();
+            } catch (OAuthCommunicationException e) {
+                e.printStackTrace();
+            } catch (ClientProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-            return jso;
+            return null;
         }
 
         // This is in the UI thread, so we can mess with the UI
-        protected void onPostExecute(JSONObject jso) {
+        protected void onPostExecute(Void nada) {
+            super.onPostExecute(nada);
             mDialog.dismiss();
             BloaActivity.this.mEditor.setText(null);
         }
@@ -366,15 +408,20 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 HttpGet get = new HttpGet(builder.build().toString());
                 mConsumer.sign(get);
                 String response = mClient.execute(get, new BasicResponseHandler());
-                array = new JSONArray(response);
-                // Delete the existing timeline
-                ContentValues[] values = new ContentValues[array.length()];
-                for(int i = 0; i < array.length(); ++i) {
-                    JSONObject status = array.getJSONObject(i);
-                    // Log.d(TAG, status.toString());
-                    values[i] = parseTimelineJSONObject(status);
+                if (response != null) {
+                    array = new JSONArray(response);
+                    // Delete the existing timeline
+                    ContentValues[] values = new ContentValues[array.length()];
+                    for(int i = 0; i < array.length(); ++i) {
+                        JSONObject status = array.getJSONObject(i);
+                        // Log.d(TAG, status.toString());
+                        values[i] = parseTimelineJSONObject(status);
+                    }
+                    getContentResolver().bulkInsert(UserStatusRecords.CONTENT_URI, values);
+                } else {
+                    Log.e(TAG, "GetTimelineTask: null response text");
+                    throw new IllegalStateException("Expected some text in the Http response");
                 }
-                getContentResolver().bulkInsert(UserStatusRecords.CONTENT_URI, values);
             } catch (Exception e) {
                 Log.e(TAG, "Get Timeline Exception", e);
             }

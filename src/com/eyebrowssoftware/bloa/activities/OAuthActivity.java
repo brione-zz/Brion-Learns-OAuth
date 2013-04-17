@@ -19,6 +19,10 @@ import junit.framework.Assert;
 import oauth.signpost.OAuth;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
+import oauth.signpost.exception.OAuthCommunicationException;
+import oauth.signpost.exception.OAuthExpectationFailedException;
+import oauth.signpost.exception.OAuthMessageSignerException;
+import oauth.signpost.exception.OAuthNotAuthorizedException;
 import android.accounts.AccountAuthenticatorActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -109,9 +113,17 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         protected String doInBackground(Void... params) {
             String url = null;
             try {
+
                 url = mProvider.retrieveRequestToken(mConsumer, Constants.CALLBACK_URL);
-            } catch (Exception e) {
-                Log.e(TAG, "BeginOAuthTask", e);
+
+            } catch (OAuthMessageSignerException e) {
+                e.printStackTrace();
+            } catch (OAuthNotAuthorizedException e) {
+                e.printStackTrace();
+            } catch (OAuthExpectationFailedException e) {
+                e.printStackTrace();
+            } catch (OAuthCommunicationException e) {
+                e.printStackTrace();
             }
             return url;
         }
@@ -127,24 +139,13 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
     }
 
     // This is new and required - we can't be decoding the tokens on the UI thread anymore
-    private class RetrieveAccessTokenTask extends AsyncTask<String, Void, Boolean> {
+    private class RetrieveAccessTokenTask extends AsyncTask<String, Void, Void> {
 
         @Override
-        protected Boolean doInBackground(String... params) {
+        protected Void doInBackground(String... verifiers) {
             try {
                 // This is the moment of truth - we could throw here
-                mProvider.retrieveAccessToken(mConsumer, params[0]);
-                return true;
-            } catch (Exception e) {
-                Log.e(TAG, "BeginOAuthTask", e);
-                return false;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(Boolean success) {
-            super.onPostExecute(success);
-            if (success) {
+                mProvider.retrieveAccessToken(mConsumer, verifiers[0]);
                 // Now we can retrieve the goodies
                 String token = mConsumer.getToken();
                 String secret = mConsumer.getTokenSecret();
@@ -152,7 +153,21 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
                 App.saveAuthInformation(mSettings, token, secret);
                 // Clear the request stuff, now that we have the real thing
                 App.saveRequestInformation(mSettings, null, null);
+            } catch (OAuthMessageSignerException e) {
+                e.printStackTrace();
+            } catch (OAuthNotAuthorizedException e) {
+                e.printStackTrace();
+            } catch (OAuthExpectationFailedException e) {
+                e.printStackTrace();
+            } catch (OAuthCommunicationException e) {
+                e.printStackTrace();
             }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void nada) {
+            super.onPostExecute(nada);
             finish();
         }
     }
