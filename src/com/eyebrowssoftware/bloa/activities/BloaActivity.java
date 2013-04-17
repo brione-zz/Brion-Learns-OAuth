@@ -17,6 +17,7 @@ package com.eyebrowssoftware.bloa.activities;
 
 import java.util.LinkedList;
 
+import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
 
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -32,6 +33,8 @@ import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -56,6 +59,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.eyebrowssoftware.bloa.App;
+import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.KeysProvider;
 import com.eyebrowssoftware.bloa.MyKeysProvider;
 import com.eyebrowssoftware.bloa.R;
@@ -77,7 +81,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     private String mSecret;
 
     private SharedPreferences mSettings;
-
+    private AccountManager mAm;
+    private Account mAccount;
 
     // You'll need to create this or change the name of DefaultKeysProvider
     KeysProvider mKeysProvider = new MyKeysProvider();
@@ -105,17 +110,26 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
         mSettings = PreferenceManager.getDefaultSharedPreferences(this);
 
-        getSupportLoaderManager().initLoader(App.BLOA_LOADER_ID, null, (LoaderCallbacks<Cursor>) this);
-}
+        getSupportLoaderManager().initLoader(Constants.BLOA_LOADER_ID, null, (LoaderCallbacks<Cursor>) this);
+
+        mAm = AccountManager.get(this);
+        Account[] accounts = mAm.getAccountsByType(Constants.ACCOUNT_TYPE);
+        Assert.assertTrue(accounts.length < 2); // Sanity is good
+        if (accounts.length > 0) {
+            mAccount = accounts[0];
+        }
+    }
 
     @Override
     public void onResume() {
         super.onResume();
 
         // We look for saved user keys
-        if(mSettings.contains(App.USER_TOKEN) && mSettings.contains(App.USER_SECRET)) {
-            mToken = mSettings.getString(App.USER_TOKEN, null);
-            mSecret = mSettings.getString(App.USER_SECRET, null);
+        if (mAccount != null) {
+
+        } else  if(mSettings.contains(Constants.USER_TOKEN) && mSettings.contains(Constants.USER_SECRET)) {
+            mToken = mSettings.getString(Constants.USER_TOKEN, null);
+            mSecret = mSettings.getString(Constants.USER_SECRET, null);
             // If we find some we update the consumer with them
             if(!(mToken == null || mSecret == null)) {
                 mConsumer.setTokenWithSecret(mToken, mSecret);
@@ -150,7 +164,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         @Override
         protected Boolean doInBackground(Void... arg0) {
             JSONObject jso = null;
-            HttpGet get = new HttpGet(App.VERIFY_URL_STRING);
+            HttpGet get = new HttpGet(Constants.VERIFY_URL_STRING);
             try {
                 mConsumer.sign(get);
                 String response = mClient.execute(get, new BasicResponseHandler());
@@ -171,7 +185,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             mButton.setEnabled(loggedIn);
             mEditor.setEnabled(loggedIn);
             if (loggedIn) {
-                TimelineSelector ss = new TimelineSelector(App.HOME_TIMELINE_URL_STRING);
+                TimelineSelector ss = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
                 new GetTimelineTask().execute(ss);
             } else {
                 deleteStatusRecord();
@@ -181,11 +195,11 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     }
 
     private int deleteTimelineRecords() {
-        return getContentResolver().delete(UserStatusRecords.CONTENT_URI, App.USER_TIMELINE_QUERY_WHERE, null);
+        return getContentResolver().delete(UserStatusRecords.CONTENT_URI, Constants.USER_TIMELINE_QUERY_WHERE, null);
     }
 
     private void deleteStatusRecord() {
-        getContentResolver().delete(UserStatusRecords.CONTENT_URI, App.USER_STATUS_QUERY_WHERE, null);
+        getContentResolver().delete(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_QUERY_WHERE, null);
     }
 
     private ContentValues parseVerifyUserJSONObject(JSONObject object) throws Exception {
@@ -210,7 +224,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
     private void makeNewUserStatusRecord(ContentValues values) {
         // Delete any existing records for user
-        getContentResolver().delete(UserStatusRecords.CONTENT_URI, App.USER_STATUS_QUERY_WHERE, null);
+        getContentResolver().delete(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_QUERY_WHERE, null);
         try {
             // Distinguish this as a User Status singleton, regardless of origin
             values.put(UserStatusRecord.LATEST_STATUS, "true");
@@ -272,7 +286,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             JSONObject jso = null;
             try {
 
-                HttpPost post = new HttpPost(App.STATUSES_URL_STRING);
+                HttpPost post = new HttpPost(Constants.STATUSES_URL_STRING);
                 LinkedList<BasicNameValuePair> out = new LinkedList<BasicNameValuePair>();
                 out.add(new BasicNameValuePair("status", params[0]));
                 post.setEntity(new UrlEncodedFormEntity(out, HTTP.UTF_8));
@@ -378,7 +392,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     public Loader<Cursor> onCreateLoader(int loaderId, Bundle savedValues) {
         // Create a CursorLoader that will take care of creating a cursor for the data
         return new CursorLoader(this, UserStatusRecords.CONTENT_URI,
-            App.USER_STATUS_PROJECTION, App.USER_STATUS_QUERY_WHERE,
+            Constants.USER_STATUS_PROJECTION, Constants.USER_STATUS_QUERY_WHERE,
             null, UserStatusRecord.DEFAULT_SORT_ORDER);
     }
 
@@ -387,8 +401,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         // We got something but it might be empty
         String name = null, last = null;
         if (cursor.moveToFirst()) {
-            name = cursor.getString(App.IDX_USER_STATUS_USER_NAME);
-            last = cursor.getString(App.IDX_USER_STATUS_USER_TEXT);
+            name = cursor.getString(Constants.IDX_USER_STATUS_USER_NAME);
+            last = cursor.getString(Constants.IDX_USER_STATUS_USER_TEXT);
         }
         updateUI(name, last);
     }
@@ -420,7 +434,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         switch (item.getItemId()) {
         case R.id.refresh_timeline:
             deleteTimelineRecords();
-            TimelineSelector ss = new TimelineSelector(App.HOME_TIMELINE_URL_STRING);
+            TimelineSelector ss = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
             new GetTimelineTask().execute(ss);
             return true;
         default:

@@ -19,7 +19,7 @@ import junit.framework.Assert;
 import oauth.signpost.OAuth;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
-import android.app.Activity;
+import android.accounts.AccountAuthenticatorActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -29,9 +29,10 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.eyebrowssoftware.bloa.App;
+import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.R;
 
-public class OAuthActivity extends Activity {
+public class OAuthActivity extends AccountAuthenticatorActivity {
     private static final String TAG = OAuthActivity.class.toString();
 
     SharedPreferences mSettings;
@@ -74,8 +75,8 @@ public class OAuthActivity extends Activity {
         if (uri != null) {
             // Get the stuff we saved in the async task so we can confirm that it all matches up
 
-            String token = mSettings.getString(App.REQUEST_TOKEN, null);
-            String secret = mSettings.getString(App.REQUEST_SECRET, null);
+            String token = mSettings.getString(Constants.REQUEST_TOKEN, null);
+            String secret = mSettings.getString(Constants.REQUEST_SECRET, null);
 
             // Intent i = new Intent(this, BloaActivity.class); // Currently how we get back to the main activity
 
@@ -108,7 +109,7 @@ public class OAuthActivity extends Activity {
         protected String doInBackground(Void... params) {
             String url = null;
             try {
-                url = mProvider.retrieveRequestToken(mConsumer, App.CALLBACK_URL);
+                url = mProvider.retrieveRequestToken(mConsumer, Constants.CALLBACK_URL);
             } catch (Exception e) {
                 Log.e(TAG, "BeginOAuthTask", e);
             }
