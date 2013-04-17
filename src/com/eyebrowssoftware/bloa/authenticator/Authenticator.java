@@ -45,6 +45,7 @@ import android.util.Log;
 
 import com.eyebrowssoftware.bloa.App;
 import com.eyebrowssoftware.bloa.Constants;
+import com.eyebrowssoftware.bloa.activities.OAuthActivity;
 
 /**
  * This class is an implementation of AbstractAccountAuthenticator for
@@ -60,7 +61,7 @@ import com.eyebrowssoftware.bloa.Constants;
  * we don't, but we do have a username and password, then we'll attempt to talk
  * to the sample service to fetch an authToken. If that fails (or we didn't have
  * a username/password), then we need to prompt the user - so we create an
- * AuthenticatorActivity intent and return that. That will display the dialog
+ * OAuthActivity intent and return that. That will display the dialog
  * that prompts the user for their login information.
  */
 class Authenticator extends AbstractAccountAuthenticator {
@@ -80,7 +81,7 @@ class Authenticator extends AbstractAccountAuthenticator {
     public Bundle addAccount(AccountAuthenticatorResponse response, String accountType,
             String authTokenType, String[] requiredFeatures, Bundle options) {
         Log.v(TAG, "addAccount()");
-        final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
+        final Intent intent = new Intent(mContext, OAuthActivity.class);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
         final Bundle bundle = new Bundle();
         bundle.putParcelable(AccountManager.KEY_INTENT, intent);
@@ -130,8 +131,8 @@ class Authenticator extends AbstractAccountAuthenticator {
 
         // If we get here, then we couldn't access the user's password - so we
         // need to re-prompt them for their credentials. We do that by creating
-        // an intent to display our AuthenticatorActivity panel.
-        final Intent intent = new Intent(mContext, AuthenticatorActivity.class);
+        // an intent to display our OAuthActivity panel.
+        final Intent intent = new Intent(mContext, OAuthActivity.class);
         intent.putExtra(Constants.PARAM_USERNAME, account.name);
         intent.putExtra(Constants.PARAM_AUTHTOKEN_TYPE, authTokenType);
         intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);

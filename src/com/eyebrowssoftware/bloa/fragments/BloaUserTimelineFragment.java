@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.eyebrowssoftware.bloa.activities;
+package com.eyebrowssoftware.bloa.fragments;
 
 import android.database.Cursor;
 import android.os.Bundle;

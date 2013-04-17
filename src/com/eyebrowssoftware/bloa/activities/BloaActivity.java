@@ -233,7 +233,9 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             // Distinguish this as a User Status singleton, regardless of origin
             values.put(UserStatusRecord.LATEST_STATUS, "true");
             getContentResolver().insert(UserStatusRecords.CONTENT_URI, values);
-            // Log.d(TAG, "makeNewUserStatusRecord: " + values.toString());
+            if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                Log.v(TAG, "makeNewUserStatusRecord: " + values.toString());
+            }
         } catch (Exception e) {
             Log.e(TAG, "Exception adding users status record", e);
         }
@@ -401,7 +403,9 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                     ContentValues[] values = new ContentValues[array.length()];
                     for(int i = 0; i < array.length(); ++i) {
                         JSONObject status = array.getJSONObject(i);
-                        // Log.d(TAG, status.toString());
+                        if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                            Log.v(TAG, status.toString());
+                        }
                         values[i] = parseTimelineJSONObject(status);
                     }
                     getContentResolver().bulkInsert(UserStatusRecords.CONTENT_URI, values);
