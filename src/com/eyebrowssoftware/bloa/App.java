@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.example.bloa;
+package com.eyebrowssoftware.bloa;
 
 import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
@@ -25,7 +25,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.util.Log;
 
-import com.example.bloa.data.UserStatusRecords.UserStatusRecord;
+import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
 public class App extends Application {
     static final String TAG = App.class.toString();

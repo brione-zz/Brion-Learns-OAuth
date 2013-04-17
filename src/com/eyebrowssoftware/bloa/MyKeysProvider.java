@@ -13,12 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.example.bloa;
+package com.eyebrowssoftware.bloa;
 
-/**
- * This is used in the tests also, to inject user keys into the mix *
- */
-public interface KeysProvider {
-    public String getKey1();
-    public String getKey2();
+public class MyKeysProvider implements KeysProvider {
+    private static final String TWITTER_CONSUMER_KEY = "naq35tFq1sGd6FxEGTGqjw";
+    private static final String TWITTER_CONSUMER_SECRET = "EXa8UfaaW1zD2f7dyRyXuaTuUV3wRvK9UB5nOLGg";
+
+    @Override
+    public String getKey1() {
+        return TWITTER_CONSUMER_KEY;
+    }
+
+    @Override
+    public String getKey2() {
+        // TODO: Set this to your App's Consumer secret
+        return TWITTER_CONSUMER_SECRET;
+    }
 }

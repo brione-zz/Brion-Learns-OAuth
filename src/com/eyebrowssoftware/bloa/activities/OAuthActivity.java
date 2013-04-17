@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.example.bloa.activities;
+package com.eyebrowssoftware.bloa.activities;
 
 import junit.framework.Assert;
 import oauth.signpost.OAuth;
@@ -28,8 +28,8 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.example.bloa.App;
-import com.example.bloa.R;
+import com.eyebrowssoftware.bloa.App;
+import com.eyebrowssoftware.bloa.R;
 
 public class OAuthActivity extends Activity {
     private static final String TAG = OAuthActivity.class.toString();

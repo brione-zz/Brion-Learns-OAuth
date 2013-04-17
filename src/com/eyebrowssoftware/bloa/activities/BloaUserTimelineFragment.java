@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.example.bloa.activities;
+package com.eyebrowssoftware.bloa.activities;
 
 import android.database.Cursor;
 import android.os.Bundle;
@@ -23,10 +23,10 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 
-import com.example.bloa.App;
-import com.example.bloa.R;
-import com.example.bloa.data.UserStatusRecords;
-import com.example.bloa.data.UserStatusRecords.UserStatusRecord;
+import com.eyebrowssoftware.bloa.App;
+import com.eyebrowssoftware.bloa.R;
+import com.eyebrowssoftware.bloa.data.UserStatusRecords;
+import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
 public class BloaUserTimelineFragment extends ListFragment implements LoaderCallbacks<Cursor> {
 

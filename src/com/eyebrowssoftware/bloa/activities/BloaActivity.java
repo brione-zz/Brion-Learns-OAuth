@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.example.bloa.activities;
+package com.eyebrowssoftware.bloa.activities;
 
 import java.util.LinkedList;
 
@@ -55,12 +55,12 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.bloa.App;
-import com.example.bloa.KeysProvider;
-import com.example.bloa.MyKeysProvider;
-import com.example.bloa.R;
-import com.example.bloa.data.UserStatusRecords;
-import com.example.bloa.data.UserStatusRecords.UserStatusRecord;
+import com.eyebrowssoftware.bloa.App;
+import com.eyebrowssoftware.bloa.KeysProvider;
+import com.eyebrowssoftware.bloa.MyKeysProvider;
+import com.eyebrowssoftware.bloa.R;
+import com.eyebrowssoftware.bloa.data.UserStatusRecords;
+import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
 public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cursor> {
     public static final String TAG = BloaActivity.class.toString();

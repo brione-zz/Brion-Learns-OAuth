@@ -1,6 +1,6 @@
 package com.example.bloa.test;
 
-import com.example.bloa.KeysProvider;
+import com.eyebrowssoftware.bloa.KeysProvider;
 
 public class MyUserKeyProvider implements KeysProvider {
 

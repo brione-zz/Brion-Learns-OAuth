@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.example.bloa.data;
+package com.eyebrowssoftware.bloa.data;
 
 import java.util.HashMap;
 
@@ -31,7 +31,7 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
 
-import com.example.bloa.data.UserStatusRecords.UserStatusRecord;
+import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
 
 /**

@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package com.example.bloa;
+package com.eyebrowssoftware.bloa;
 
 // You can write your own provider or override the values here
 public class DefaultKeysProvider implements KeysProvider {

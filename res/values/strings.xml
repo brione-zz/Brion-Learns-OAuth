@@ -14,8 +14,8 @@
      limitations under the License.
 -->
 <resources>
-    <string name="app_name">BLOA</string>
-    <string name="oauth_name">OAUTH</string>
+    <string name="app_name">BLOATweet</string>
+    <string name="oauth_name">Authenticating</string>
     <string name="tweet">Enter your Message here</string>
     <string name="label"><b>Type Something</b></string>
     <string name="post"><b>Post</b></string>

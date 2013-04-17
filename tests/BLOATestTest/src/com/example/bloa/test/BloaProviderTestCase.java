@@ -6,10 +6,10 @@ import android.net.Uri;
 import android.test.ProviderTestCase2;
 import android.test.mock.MockContentResolver;
 
-import com.example.bloa.App;
-import com.example.bloa.data.BloaProvider;
-import com.example.bloa.data.UserStatusRecords;
-import com.example.bloa.data.UserStatusRecords.UserStatusRecord;
+import com.eyebrowssoftware.bloa.App;
+import com.eyebrowssoftware.bloa.data.BloaProvider;
+import com.eyebrowssoftware.bloa.data.UserStatusRecords;
+import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
 public class BloaProviderTestCase extends ProviderTestCase2<BloaProvider> {
 

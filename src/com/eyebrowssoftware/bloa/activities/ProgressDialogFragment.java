@@ -1,4 +1,4 @@
-package com.example.bloa.activities;
+package com.eyebrowssoftware.bloa.activities;
 
 import android.app.Dialog;
 import android.app.ProgressDialog;
