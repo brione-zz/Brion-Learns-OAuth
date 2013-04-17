@@ -6,7 +6,7 @@ import android.net.Uri;
 import android.test.ProviderTestCase2;
 import android.test.mock.MockContentResolver;
 
-import com.eyebrowssoftware.bloa.App;
+import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.data.BloaProvider;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
@@ -32,10 +32,10 @@ public class BloaProviderTestCase extends ProviderTestCase2<BloaProvider> {
     public void testPreconditions() {
         assertNotNull(this.getProvider());
         assertNotNull(mCR);
-        Cursor c = mCR.query(UserStatusRecords.CONTENT_URI, App.USER_STATUS_PROJECTION, null, null, null);
+        Cursor c = mCR.query(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_PROJECTION, null, null, null);
         assertNotNull(c);
         assertEquals(0, c.getCount());
-        assertEquals(App.USER_STATUS_PROJECTION.length, c.getColumnCount());
+        assertEquals(Constants.USER_STATUS_PROJECTION.length, c.getColumnCount());
         c.close();
     }
 
@@ -51,7 +51,7 @@ public class BloaProviderTestCase extends ProviderTestCase2<BloaProvider> {
     }
 
     private Cursor queryUserStatusRecord(Uri uri) {
-        return mCR.query(uri, App.USER_STATUS_PROJECTION, App.USER_STATUS_QUERY_WHERE,
+        return mCR.query(uri, Constants.USER_STATUS_PROJECTION, Constants.USER_STATUS_QUERY_WHERE,
                 null, UserStatusRecord.DEFAULT_SORT_ORDER);
     }
 
@@ -62,13 +62,13 @@ public class BloaProviderTestCase extends ProviderTestCase2<BloaProvider> {
         Cursor c = queryUserStatusRecord(uri);
         assertNotNull(c);
         assertEquals(1, c.getCount());
-        assertEquals(App.USER_STATUS_PROJECTION.length, c.getColumnCount());
+        assertEquals(Constants.USER_STATUS_PROJECTION.length, c.getColumnCount());
         assertTrue(c.moveToFirst());
-        assertEquals(1, c.getInt(App.IDX_USER_STATUS_USER_ID));
-        assertEquals(String.valueOf(current), c.getString(App.IDX_USER_STATUS_USER_CREATED_DATE));
-        assertEquals(UserStatusRecord.USER_NAME + 1, c.getString(App.IDX_USER_STATUS_USER_NAME));
-        assertEquals(UserStatusRecord.USER_TEXT + 1, c.getString(App.IDX_USER_STATUS_USER_TEXT));
-        assertEquals(current, c.getLong(App.IDX_USER_STATUS_CREATED_DATE));
+        assertEquals(1, c.getInt(Constants.IDX_USER_STATUS_USER_ID));
+        assertEquals(String.valueOf(current), c.getString(Constants.IDX_USER_STATUS_USER_CREATED_DATE));
+        assertEquals(UserStatusRecord.USER_NAME + 1, c.getString(Constants.IDX_USER_STATUS_USER_NAME));
+        assertEquals(UserStatusRecord.USER_TEXT + 1, c.getString(Constants.IDX_USER_STATUS_USER_TEXT));
+        assertEquals(current, c.getLong(Constants.IDX_USER_STATUS_CREATED_DATE));
         c.close();
     }
 
@@ -82,18 +82,18 @@ public class BloaProviderTestCase extends ProviderTestCase2<BloaProvider> {
         Cursor c = queryUserStatusRecord(uri);
         assertNotNull(c);
         assertEquals(1, c.getCount());
-        assertEquals(App.USER_STATUS_PROJECTION.length, c.getColumnCount());
+        assertEquals(Constants.USER_STATUS_PROJECTION.length, c.getColumnCount());
         assertTrue(c.moveToFirst());
-        assertEquals(1, c.getInt(App.IDX_USER_STATUS_USER_ID));
-        assertEquals(String.valueOf(current), c.getString(App.IDX_USER_STATUS_USER_CREATED_DATE));
-        assertEquals(UserStatusRecord.USER_NAME + 1, c.getString(App.IDX_USER_STATUS_USER_NAME));
-        assertEquals(UserStatusRecord.USER_TEXT + 2, c.getString(App.IDX_USER_STATUS_USER_TEXT));
-        assertEquals(current, c.getLong(App.IDX_USER_STATUS_CREATED_DATE));
+        assertEquals(1, c.getInt(Constants.IDX_USER_STATUS_USER_ID));
+        assertEquals(String.valueOf(current), c.getString(Constants.IDX_USER_STATUS_USER_CREATED_DATE));
+        assertEquals(UserStatusRecord.USER_NAME + 1, c.getString(Constants.IDX_USER_STATUS_USER_NAME));
+        assertEquals(UserStatusRecord.USER_TEXT + 2, c.getString(Constants.IDX_USER_STATUS_USER_TEXT));
+        assertEquals(current, c.getLong(Constants.IDX_USER_STATUS_CREATED_DATE));
         c.close();
     }
 
     private int deleteUserStatusRecord(Uri uri) {
-        return mCR.delete(uri, App.USER_STATUS_QUERY_WHERE, null);
+        return mCR.delete(uri, Constants.USER_STATUS_QUERY_WHERE, null);
     }
 
     public void testDeleteUserStatus() {
@@ -119,7 +119,7 @@ public class BloaProviderTestCase extends ProviderTestCase2<BloaProvider> {
     }
 
     private Cursor queryUserTimelineRecord(Uri uri) {
-        return mCR.query(uri, App.USER_STATUS_PROJECTION, App.USER_TIMELINE_QUERY_WHERE,
+        return mCR.query(uri, Constants.USER_STATUS_PROJECTION, Constants.USER_TIMELINE_QUERY_WHERE,
                 null, UserStatusRecord.DEFAULT_SORT_ORDER);
     }
 
@@ -130,11 +130,11 @@ public class BloaProviderTestCase extends ProviderTestCase2<BloaProvider> {
         Cursor c = queryUserTimelineRecord(uri);
         assertNotNull(c);
         assertEquals(1, c.getCount());
-        assertEquals(App.USER_STATUS_PROJECTION.length, c.getColumnCount());
+        assertEquals(Constants.USER_STATUS_PROJECTION.length, c.getColumnCount());
         assertTrue(c.moveToFirst());
-        assertEquals(UserStatusRecord.USER_NAME + 1, c.getString(App.IDX_USER_STATUS_USER_NAME));
-        assertEquals(UserStatusRecord.USER_TEXT + 1, c.getString(App.IDX_USER_STATUS_USER_TEXT));
-        assertEquals(current, c.getLong(App.IDX_USER_STATUS_CREATED_DATE));
+        assertEquals(UserStatusRecord.USER_NAME + 1, c.getString(Constants.IDX_USER_STATUS_USER_NAME));
+        assertEquals(UserStatusRecord.USER_TEXT + 1, c.getString(Constants.IDX_USER_STATUS_USER_TEXT));
+        assertEquals(current, c.getLong(Constants.IDX_USER_STATUS_CREATED_DATE));
         c.close();
     }
 
@@ -148,16 +148,16 @@ public class BloaProviderTestCase extends ProviderTestCase2<BloaProvider> {
         Cursor c = queryUserTimelineRecord(uri);
         assertNotNull(c);
         assertEquals(1, c.getCount());
-        assertEquals(App.USER_STATUS_PROJECTION.length, c.getColumnCount());
+        assertEquals(Constants.USER_STATUS_PROJECTION.length, c.getColumnCount());
         assertTrue(c.moveToFirst());
-        assertEquals(UserStatusRecord.USER_NAME + 1, c.getString(App.IDX_USER_STATUS_USER_NAME));
-        assertEquals(UserStatusRecord.USER_TEXT + 2, c.getString(App.IDX_USER_STATUS_USER_TEXT));
-        assertEquals(current, c.getLong(App.IDX_USER_STATUS_CREATED_DATE));
+        assertEquals(UserStatusRecord.USER_NAME + 1, c.getString(Constants.IDX_USER_STATUS_USER_NAME));
+        assertEquals(UserStatusRecord.USER_TEXT + 2, c.getString(Constants.IDX_USER_STATUS_USER_TEXT));
+        assertEquals(current, c.getLong(Constants.IDX_USER_STATUS_CREATED_DATE));
         c.close();
     }
 
     private int deleteTimelineRecord(Uri uri) {
-        return mCR.delete(uri, App.USER_TIMELINE_QUERY_WHERE, null);
+        return mCR.delete(uri, Constants.USER_TIMELINE_QUERY_WHERE, null);
     }
 
     public void testDeleteUserTimeline() {
