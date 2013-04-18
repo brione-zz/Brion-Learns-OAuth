@@ -28,7 +28,8 @@ import com.eyebrowssoftware.bloa.R;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
-public class BloaUserTimelineFragment extends ListFragment implements LoaderCallbacks<Cursor> {
+public class UserTimelineFragment extends ListFragment implements LoaderCallbacks<Cursor> {
+    static final String TAG = "UserTimelineFragment";
 
     private static final int[] IDS = {
         android.R.id.text1,

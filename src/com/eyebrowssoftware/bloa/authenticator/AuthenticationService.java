@@ -35,6 +35,6 @@ public class AuthenticationService extends Service {
             Log.v(TAG, "getBinder()...  returning the Authenticator binder for intent "
                     + intent);
         }
-        return new Authenticator(this).getIBinder();
+        return new BloaAuthenticator(this).getIBinder();
     }
 }

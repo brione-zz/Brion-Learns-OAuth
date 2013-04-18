@@ -3,3 +3,5 @@ bin
 gen
 src/com/eyebrowssoftware/bloa/MyKeysProvider.java
 tests/BLOATestTest/src/com/example/bloa/test/MyUserKeyProvider.java
+tests/BLOATestTest/src/com/eyebrowssoftware/bloa/test/MyKeysProvider.java
+tests/BLOATestTest/src/com/eyebrowssoftware/bloa/test/MyUserKeyProvider.java

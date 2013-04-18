@@ -40,7 +40,7 @@ public final class UserStatusRecords {
      * breweries.
      */
     public static final String CONTENT_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE
-        + "/vnd.com.example.bloa.user_status_record";
+        + "/vnd.com.eyebrowssoftware.bloa.user_status_record";
 
     /**
      * @author brionemde
@@ -52,7 +52,7 @@ public final class UserStatusRecords {
          * note.
          */
         public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE
-                + "/vnd.com.example.bloa.user_status_record";
+                + "/vnd.com.eyebrowssoftware.bloa.user_status_record";
 
         /**
          * The default sort order for this table

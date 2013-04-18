@@ -1,8 +1,8 @@
-package com.example.bloa.test;
+package com.eyebrowssoftware.bloa.test;
 
-import com.eyebrowssoftware.bloa.KeysProvider;
+import com.eyebrowssoftware.bloa.IKeysProvider;
 
-public class UserKeyProvider extends Object implements KeysProvider {
+public class UserKeyProvider extends Object implements IKeysProvider {
 
     @Override
     public String getKey1() {

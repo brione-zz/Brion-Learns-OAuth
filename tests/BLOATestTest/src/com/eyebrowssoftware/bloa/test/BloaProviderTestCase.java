@@ -1,4 +1,4 @@
-package com.example.bloa.test;
+package com.eyebrowssoftware.bloa.test;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -22,7 +22,7 @@ public class BloaProviderTestCase extends ProviderTestCase2<BloaProvider> {
     public void setUp() throws Exception {
         super.setUp();
         mCR = this.getMockContentResolver();
-        mCR.addProvider("com.example.bloa", this.getProvider());
+        mCR.addProvider(BloaProvider.AUTHORITY, this.getProvider());
     }
 
     public void tearDown() throws Exception {

@@ -1,4 +1,4 @@
-package com.example.bloa.test;
+package com.eyebrowssoftware.bloa.test;
 
 import android.app.Application;
 
