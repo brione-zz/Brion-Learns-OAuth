@@ -16,7 +16,7 @@
 package com.eyebrowssoftware.bloa;
 
 // You can write your own provider or override the values here
-public class DefaultKeysProvider implements KeysProvider {
+public class DefaultKeysProvider implements IKeysProvider {
 
     @Override
     public String getKey1() {

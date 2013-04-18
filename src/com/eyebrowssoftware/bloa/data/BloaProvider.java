@@ -39,9 +39,9 @@ import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
  * itself, a creation date and a modified data.
  */
 public class BloaProvider extends ContentProvider {
-    static final String TAG = BloaProvider.class.toString();
+    static final String TAG = "BloaProvider";
 
-    public static final String AUTHORITY = "com.example.bloa";
+    public static final String AUTHORITY = "com.eyebrowssoftware.bloa";
 
     public static final String URI_STRING = "content://" + AUTHORITY;
 

@@ -21,18 +21,23 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
+import com.eyebrowssoftware.bloa.data.UserStatusRecords;
+import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
+
 import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
 import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
 import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
 import android.app.Application;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.SharedPreferences;
 import android.util.Log;
 
 
 public class App extends Application {
-    static final String TAG = Constants.class.toString();
+    static final String TAG = "App";
 
 
     public static void saveRequestInformation(SharedPreferences settings, String token, String secret) {
@@ -93,16 +98,34 @@ public class App extends Application {
         return httpClient;
     }
 
+    // This will end up part of a SyncAdapter
+    public static void makeNewUserStatusRecord(ContentResolver cr, ContentValues values) {
+        // Delete any existing records for user
+        cr.delete(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_QUERY_WHERE, null);
+        try {
+            // Distinguish this as a User Status singleton, regardless of origin
+            values.put(UserStatusRecord.LATEST_STATUS, "true");
+            cr.insert(UserStatusRecords.CONTENT_URI, values);
+            if (Log.isLoggable(TAG, Log.VERBOSE)) {
+                Log.v(TAG, "makeNewUserStatusRecord: " + values.toString());
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Exception adding users status record", e);
+        }
+    }
+
+
+
     private OAuthConsumer mConsumer = null;
     private OAuthProvider mProvider = null;
 
-    private KeysProvider mKeysProvider = new DefaultKeysProvider();
+    private IKeysProvider mKeysProvider = new DefaultKeysProvider();
 
-    private KeysProvider getKeysProvider() {
+    private IKeysProvider getKeysProvider() {
         return mKeysProvider;
     }
 
-    public void setKeysProvider(KeysProvider kp) {
+    public void setKeysProvider(IKeysProvider kp) {
         mKeysProvider = kp;
     }
 

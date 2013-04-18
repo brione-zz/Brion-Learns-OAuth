@@ -15,7 +15,7 @@
  */
 package com.eyebrowssoftware.bloa;
 
-public class MyKeysProvider implements KeysProvider {
+public class MyKeysProvider implements IKeysProvider {
     private static final String TWITTER_CONSUMER_KEY = "naq35tFq1sGd6FxEGTGqjw";
     private static final String TWITTER_CONSUMER_SECRET = "EXa8UfaaW1zD2f7dyRyXuaTuUV3wRvK9UB5nOLGg";
 

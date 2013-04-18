@@ -79,7 +79,7 @@
         />
     </LinearLayout>
     <fragment
-        android:name="com.eyebrowssoftware.bloa.activities.BloaUserTimelineFragment"
+        android:name="com.eyebrowssoftware.bloa.fragments.UserTimelineFragment"
         android:id="@+id/list_fragment"
         android:layout_weight="1"
         android:layout_height="0dp"
