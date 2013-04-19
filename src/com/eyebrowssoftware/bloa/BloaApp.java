@@ -91,7 +91,7 @@ public class BloaApp extends Application {
         }
     }
 
-    private static final IKeysProvider sKeysProvider = new MyKeysProvider();
+    private static final MyKeysProvider sKeysProvider = new MyKeysProvider();
 
     private static final OAuthConsumer sConsumer = new CommonsHttpOAuthConsumer(
             sKeysProvider.getKey1(),
