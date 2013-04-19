@@ -15,18 +15,16 @@
  */
 package com.eyebrowssoftware.bloa;
 
+// You can write your own provider or override the values here
 public class MyKeysProvider implements IKeysProvider {
-    private static final String TWITTER_CONSUMER_KEY = "naq35tFq1sGd6FxEGTGqjw";
-    private static final String TWITTER_CONSUMER_SECRET = "EXa8UfaaW1zD2f7dyRyXuaTuUV3wRvK9UB5nOLGg";
 
     @Override
     public String getKey1() {
-        return TWITTER_CONSUMER_KEY;
+        return "naq35tFq1sGd6FxEGTGqjw";
     }
 
     @Override
     public String getKey2() {
-        // TODO: Set this to your App's Consumer secret
-        return TWITTER_CONSUMER_SECRET;
+        return "EXa8UfaaW1zD2f7dyRyXuaTuUV3wRvK9UB5nOLGg";
     }
 }
