@@ -43,6 +43,8 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -196,6 +198,50 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             mCB.setChecked(false); // the oauth callback will set it to the proper state
         }
     }
+
+    private ContentValues parseVerifyUserJSONObject(JSONObject object) throws JSONException {
+        ContentValues values = new ContentValues();
+        values.put(UserStatusRecord.USER_NAME, object.getString("name"));
+        values.put(UserStatusRecord.RECORD_ID, object.getInt("id_str"));
+        values.put(UserStatusRecord.USER_CREATED_DATE, object.getString("created_at"));
+        JSONObject status = object.getJSONObject("status");
+        values.put(UserStatusRecord.USER_TEXT, status.getString("text"));
+        return values;
+    }
+
+
+    class GetCredentialsTask extends AsyncTask<Void, Void, Boolean> {
+
+        HttpClient mClient = App.getHttpClient();
+        @Override
+        protected Boolean doInBackground(Void... arg0) {
+            JSONObject jso = null;
+            HttpGet get = new HttpGet(Constants.VERIFY_URL_STRING);
+            try {
+                mConsumer.sign(get);
+                String response = mClient.execute(get, new BasicResponseHandler());
+                if (response != null) {
+                    jso = new JSONObject(response);
+                    App.makeNewUserStatusRecord(BloaActivity.this.getContentResolver(), parseVerifyUserJSONObject(jso));
+                    return true;
+                } else {
+                    Log.e(TAG, "PostTask: null response text");
+                    throw new IllegalStateException("Expected some text in the Http response");
+                }
+            } catch (Exception e) {
+                // Expected if we don't have the proper credentials saved away
+            }
+            return false;
+        }
+
+        // This is in the UI thread, so we can mess with the UI
+        @Override
+        protected void onPostExecute(Boolean loggedIn) {
+            super.onPostExecute(loggedIn);
+       }
+    }
+
+
 
     //----------------------------
     // This task posts a message to your message queue on the service.
@@ -408,6 +454,18 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     public void run(AccountManagerFuture<Bundle> futureResult) {
         Log.d(TAG, "Got a future!");
         // TODO Auto-generated method stub
+        try {
+            Bundle authResult = futureResult.getResult();
+        } catch (OperationCanceledException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (AuthenticatorException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
         getSupportLoaderManager().initLoader(Constants.BLOA_LOADER_ID, null, (LoaderCallbacks<Cursor>) this);
 
