@@ -68,7 +68,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.eyebrowssoftware.bloa.App;
+import com.eyebrowssoftware.bloa.BloaApp;
 import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.IKeysProvider;
 import com.eyebrowssoftware.bloa.MyKeysProvider;
@@ -107,7 +107,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         setContentView(R.layout.main);
 
         mCR = this.getContentResolver();
-        mConsumer = ((App) getApplication()).getOAuthConsumer();
+        mConsumer = ((BloaApp) getApplication()).getOAuthConsumer();
 
         mCB = (CheckBox) this.findViewById(R.id.enable);
         mCB.setChecked(false);
@@ -212,7 +212,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
     class GetCredentialsTask extends AsyncTask<Void, Void, Boolean> {
 
-        HttpClient mClient = App.getHttpClient();
+        HttpClient mClient = BloaApp.getHttpClient();
         @Override
         protected Boolean doInBackground(Void... arg0) {
             JSONObject jso = null;
@@ -222,7 +222,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 String response = mClient.execute(get, new BasicResponseHandler());
                 if (response != null) {
                     jso = new JSONObject(response);
-                    App.makeNewUserStatusRecord(BloaActivity.this.getContentResolver(), parseVerifyUserJSONObject(jso));
+                    BloaApp.makeNewUserStatusRecord(BloaActivity.this.getContentResolver(), parseVerifyUserJSONObject(jso));
                     return true;
                 } else {
                     Log.e(TAG, "PostTask: null response text");
@@ -248,7 +248,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     class PostTask extends AsyncTask<String, Void, Void> {
 
         ProgressDialogFragment mDialog;
-        HttpClient mClient = App.getHttpClient();
+        HttpClient mClient = BloaApp.getHttpClient();
 
         @Override
         protected void onPreExecute() {
@@ -271,7 +271,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 String response = mClient.execute(post, new BasicResponseHandler());
                 if (response != null) {
                     jso = new JSONObject(response);
-                    App.makeNewUserStatusRecord(mCR, parseTimelineJSONObject(jso));
+                    BloaApp.makeNewUserStatusRecord(mCR, parseTimelineJSONObject(jso));
                 } else {
                     Log.e(TAG, "PostTask: null response text");
                     throw new IllegalStateException("Expected some text in the Http response");
@@ -339,7 +339,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     class GetTimelineTask extends AsyncTask<TimelineSelector, Void, Void> {
 
         ProgressDialogFragment mDialog;
-        HttpClient mClient = App.getHttpClient();
+        HttpClient mClient = BloaApp.getHttpClient();
 
         @Override
         protected void onPreExecute() {
@@ -453,23 +453,21 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     @Override
     public void run(AccountManagerFuture<Bundle> futureResult) {
         Log.d(TAG, "Got a future!");
-        // TODO Auto-generated method stub
+        String token = null;
+        String secret = null;
         try {
             Bundle authResult = futureResult.getResult();
+            token = authResult.getString(AccountManager.KEY_ACCOUNT_NAME);
+            secret = authResult.getString(AccountManager.KEY_AUTHTOKEN);
+            mConsumer.setTokenWithSecret(token, secret);
+            new GetCredentialsTask().execute();
         } catch (OperationCanceledException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (AuthenticatorException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
-        getSupportLoaderManager().initLoader(Constants.BLOA_LOADER_ID, null, (LoaderCallbacks<Cursor>) this);
-
-
     }
 
 }

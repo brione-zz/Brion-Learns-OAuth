@@ -15,28 +15,28 @@
  */
 package com.eyebrowssoftware.bloa;
 
+import oauth.signpost.OAuthConsumer;
+import oauth.signpost.OAuthProvider;
+import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
+import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
+
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.params.ConnManagerParams;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
-import com.eyebrowssoftware.bloa.data.UserStatusRecords;
-import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
-
-import junit.framework.Assert;
-import oauth.signpost.OAuthConsumer;
-import oauth.signpost.OAuthProvider;
-import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
-import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
 import android.app.Application;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.SharedPreferences;
 import android.util.Log;
 
+import com.eyebrowssoftware.bloa.data.UserStatusRecords;
+import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
-public class App extends Application {
+
+public class BloaApp extends Application {
     static final String TAG = "App";
 
 
@@ -63,29 +63,6 @@ public class App extends Application {
 
     }
 
-    public static void saveAuthInformation(SharedPreferences settings, String token, String secret) {
-        // null means to clear the old values
-        SharedPreferences.Editor editor = settings.edit();
-        if(token == null) {
-            editor.remove(Constants.USER_TOKEN);
-            Log.d(TAG, "Clearing OAuth Token");
-        }
-        else {
-            editor.putString(Constants.USER_TOKEN, token);
-            Log.d(TAG, "Saving OAuth Token: " + token);
-        }
-        if (secret == null) {
-            editor.remove(Constants.USER_SECRET);
-            Log.d(TAG, "Clearing OAuth Secret");
-        }
-        else {
-            editor.putString(Constants.USER_SECRET, secret);
-            Log.d(TAG, "Saving OAuth Secret: " + secret);
-        }
-        editor.commit();
-
-    }
-
     /**
      * Configures the httpClient to connect to the URL provided.
      */
@@ -98,7 +75,7 @@ public class App extends Application {
         return httpClient;
     }
 
-    // This will end up part of a SyncAdapter
+    // This will end up part of a furture SyncAdapter
     public static void makeNewUserStatusRecord(ContentResolver cr, ContentValues values) {
         // Delete any existing records for user
         cr.delete(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_QUERY_WHERE, null);
@@ -114,48 +91,34 @@ public class App extends Application {
         }
     }
 
+    private static final IKeysProvider sKeysProvider = new MyKeysProvider();
+
+    private static final OAuthConsumer sConsumer = new CommonsHttpOAuthConsumer(
+            sKeysProvider.getKey1(),
+            sKeysProvider.getKey2());
+
+    private static final OAuthProvider sProvider = new CommonsHttpOAuthProvider(
+        Constants.TWITTER_REQUEST_TOKEN_URL,
+        Constants.TWITTER_ACCESS_TOKEN_URL,
+        Constants.TWITTER_AUTHORIZE_URL);
 
 
-    private OAuthConsumer mConsumer = null;
-    private OAuthProvider mProvider = null;
-
-    private IKeysProvider mKeysProvider = new DefaultKeysProvider();
-
-    private IKeysProvider getKeysProvider() {
-        return mKeysProvider;
+    public static OAuthConsumer getOAuthConsumer() {
+        return sConsumer;
     }
 
-    public void setKeysProvider(IKeysProvider kp) {
-        mKeysProvider = kp;
+    public static OAuthProvider getOAuthProvider() {
+        return sProvider;
     }
 
-    public OAuthConsumer getOAuthConsumer() {
-        return mConsumer;
-    }
-
-    public OAuthProvider getOAuthProvider() {
-        return mProvider;
-    }
+    public BloaApp mBloaApp;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        // Only works with my code unless you create your own MyKeysProvider class
-        this.setKeysProvider(new MyKeysProvider());
+        mBloaApp = this;
 
-        mConsumer = new CommonsHttpOAuthConsumer(
-                getKeysProvider().getKey1(),
-                getKeysProvider().getKey2());
-
-        mProvider = new CommonsHttpOAuthProvider(
-            Constants.TWITTER_REQUEST_TOKEN_URL,
-            Constants.TWITTER_ACCESS_TOKEN_URL,
-            Constants.TWITTER_AUTHORIZE_URL);
-
-        Assert.assertNotNull(mConsumer);
-        Assert.assertNotNull(mProvider);
-
-        mProvider.setOAuth10a(true);
+        sProvider.setOAuth10a(true);
     }
 }
