@@ -23,44 +23,33 @@ import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
 import oauth.signpost.exception.OAuthNotAuthorizedException;
-
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.util.Log;
 
-import com.eyebrowssoftware.bloa.App;
+import com.eyebrowssoftware.bloa.BloaApp;
 import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.R;
 import com.eyebrowssoftware.bloa.data.BloaProvider;
-import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
 public class OAuthActivity extends AccountAuthenticatorActivity {
     static final String TAG = "OAuthActivity";
 
-   private SharedPreferences mSettings;
    private  OAuthProvider mProvider;
    private  OAuthConsumer mConsumer;
    private  Intent mIntent;
-   private  App mApp;
    private AccountManager mAccountManager;
    private Boolean mConfirmCredentials = false;
    private Boolean mRequestNewAccount = false;
+   private String mRequestToken;
+   private String mRequestSecret;
 
 
     @Override
@@ -69,12 +58,10 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
 
         setContentView(R.layout.progress_view);
 
-        mSettings = PreferenceManager.getDefaultSharedPreferences(this);
         mAccountManager = AccountManager.get(this);
 
-        mApp = (App) this.getApplication();
-        mProvider = mApp.getOAuthProvider();
-        mConsumer = mApp.getOAuthConsumer();
+        mProvider = BloaApp.getOAuthProvider();
+        mConsumer = BloaApp.getOAuthConsumer();
 
         mIntent = this.getIntent();
         mIntent.getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
@@ -191,7 +178,6 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         result.putString(Constants.PARAM_USERNAME, mConsumer.getToken());
         result.putString(Constants.PARAM_PASSWORD, mConsumer.getTokenSecret());
         OAuthActivity.this.setAccountAuthenticatorResult(result);
-        App.saveRequestInformation(mSettings, null, null);
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, mConsumer.getToken());
         intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
@@ -199,6 +185,8 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         setResult(RESULT_OK, intent);
         finish();
     }
+
+
 
     /**
      * Called when response is received from the server for authentication
@@ -223,7 +211,7 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, token);
         intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
-        intent.putExtra(AccountManager.KEY_AUTH_TOKEN_LABEL, secret);
+        intent.putExtra(AccountManager.KEY_AUTHTOKEN, secret);
         setAccountAuthenticatorResult(intent.getExtras());
         setResult(RESULT_OK, intent);
         finish();
@@ -238,6 +226,8 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
     }
 
     private void onAuthenticationCanceled() {
+        final Intent result = new Intent();
+        // TODO fix this
 
     }
 }

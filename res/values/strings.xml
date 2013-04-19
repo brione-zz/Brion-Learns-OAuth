@@ -42,4 +42,7 @@
     <string name="login_activity_loginfail_text_pwonly">You entered the wrong password or your account has changed. Please re-enter your password.</string>
     <string name="login_activity_loginfail_text_pwmissing">Type the password for this account.</string>
     <string name="login_activity_newaccount_text">Sign in to your Sample SyncAdapter account. </string>
+
+    <!-- Interim strings -->
+    <string name="bloa_tweet_authenticator_label">BLOATweet Authenticator</string>
 </resources>
