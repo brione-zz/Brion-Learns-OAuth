@@ -10,7 +10,7 @@ import com.eyebrowssoftware.bloa.activities.BloaActivity;
 
 public class BloaActivityInstrumentationTestCase2 extends ActivityInstrumentationTestCase2<BloaActivity> {
     // You'll have to create your own
-    IKeysProvider mKeysProvider = new MyUserKeyProvider();
+    IKeysProvider mKeysProvider = new MyKeysProvider();
     SharedPreferences mSettings;
 
     public BloaActivityInstrumentationTestCase2() {
