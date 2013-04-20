@@ -47,7 +47,6 @@ import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -83,8 +82,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     private CheckBox mCB;
     private EditText mEditor;
     private Button mButton;
-    private TextView mUser;
-    private TextView mLast;
+    private TextView mUserTextView;
+    private TextView mLastTweetTextView;
 
     private OAuthConsumer mConsumer = null;
     private AccountManager mAm;
@@ -99,7 +98,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     IKeysProvider mKeysProvider = new MyKeysProvider();
 
     // TODO: decide to move the minSdkVersion forward or not
-    @SuppressWarnings("deprecation")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -110,7 +108,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         mConsumer = BloaApp.getOAuthConsumer();
 
         mCB = (CheckBox) this.findViewById(R.id.enable);
-        mCB.setChecked(false);
         mCB.setOnClickListener(new LoginCheckBoxClickedListener());
 
         mEditor = (EditText) this.findViewById(R.id.editor);
@@ -118,17 +115,14 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         mButton = (Button) this.findViewById(R.id.post);
         mButton.setOnClickListener(new PostButtonClickListener());
 
-        mUser = (TextView) this.findViewById(R.id.user);
-        mLast = (TextView) this.findViewById(R.id.last);
+        mUserTextView = (TextView) this.findViewById(R.id.user);
+        mLastTweetTextView = (TextView) this.findViewById(R.id.last);
 
         mAm = AccountManager.get(this);
         Account[] accounts = mAm.getAccountsByType(Constants.ACCOUNT_TYPE);
         Assert.assertTrue(accounts.length < 2); // There can only be one: Twitter
-        if (accounts.length == 0) {
+        if (accounts.length > 0) {
             mAccount = accounts[0];
-            mAm.getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, this, null);
-        } else {
-            mAm.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, this, this, mHandler);
         }
     }
 
@@ -179,21 +173,30 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
     }
 
+    private void setLoggedOut() {
+        // XXX: Fix thix
+        // mAm.invalidateAuthToken(Constants.ACCOUNT_TYPE, null);
+        deleteStatusRecord();
+        deleteTimelineRecords();
+        mButton.setEnabled(false);
+        mEditor.setEnabled(false);
+        mEditor.setText(null);
+        updateUI(null, null);
+
+    }
+
     class LoginCheckBoxClickedListener implements OnClickListener {
 
         @Override
         public void onClick(View v) {
             if(mCB.isChecked()) {
-                BloaActivity.this.startActivity(new Intent(BloaActivity.this, OAuthActivity.class));
+                if (mAccount != null) {
+                    mAm.getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
+                } else {
+                    mAm.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, mHandler);
+                }
             } else {
-                // XXX: Fix thix
-                mAm.invalidateAuthToken(Constants.ACCOUNT_TYPE, null);
-                deleteStatusRecord();
-                deleteTimelineRecords();
-                mButton.setEnabled(false);
-                mEditor.setEnabled(false);
-                mEditor.setText(null);
-                updateUI(null, null);
+                setLoggedOut();
             }
             mCB.setChecked(false); // the oauth callback will set it to the proper state
         }
@@ -422,11 +425,11 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
     private void updateUI(String userName, String lastMessage) {
         if (userName != null && lastMessage != null) {
-            mUser.setText(userName);
-            mLast.setText(lastMessage);
+            mUserTextView.setText(userName);
+            mLastTweetTextView.setText(lastMessage);
         } else {
-            mUser.setText(getString(R.string.userhint));
-            mLast.setText(getString(R.string.userhint));
+            mUserTextView.setText(getString(R.string.userhint));
+            mLastTweetTextView.setText(getString(R.string.userhint));
         }
     }
 
