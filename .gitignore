@@ -1,5 +1,5 @@
 ./project.properties
 bin
 gen
-src/com/example/bloa/MyKeysProvider.java
+src/com/eyebrowssoftware/bloa/MyKeysProvider.java
 tests/BLOATestTest/src/com/example/bloa/test/MyUserKeyProvider.java
