@@ -25,6 +25,7 @@ import oauth.signpost.exception.OAuthMessageSignerException;
 import oauth.signpost.exception.OAuthNotAuthorizedException;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
+import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.content.Intent;
@@ -50,6 +51,7 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
    private Boolean mRequestNewAccount = false;
    private String mRequestToken;
    private String mRequestSecret;
+   private AccountAuthenticatorResponse mResponse;
 
 
     @Override
@@ -64,7 +66,7 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         mConsumer = BloaApp.getOAuthConsumer();
 
         mIntent = this.getIntent();
-        mIntent.getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
+        mResponse = mIntent.getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
         (new RetrieveRequestTokenTask()).execute(new Void[0]);
     }
 
@@ -119,6 +121,8 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
              */
             String verifier = uri.getQueryParameter(OAuth.OAUTH_VERIFIER);
             (new RetrieveAccessTokenTask()).execute(verifier);
+        } else {
+            finish();
         }
     }
 
@@ -179,6 +183,7 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         result.putString(Constants.PARAM_PASSWORD, mConsumer.getTokenSecret());
         OAuthActivity.this.setAccountAuthenticatorResult(result);
         final Intent intent = new Intent();
+        mResponse.onResult(result);
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, mConsumer.getToken());
         intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
         setAccountAuthenticatorResult(intent.getExtras());
