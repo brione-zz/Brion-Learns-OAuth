@@ -107,7 +107,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         setContentView(R.layout.main);
 
         mCR = this.getContentResolver();
-        mConsumer = ((BloaApp) getApplication()).getOAuthConsumer();
+        mConsumer = BloaApp.getOAuthConsumer();
 
         mCB = (CheckBox) this.findViewById(R.id.enable);
         mCB.setChecked(false);
@@ -123,10 +123,10 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
         mAm = AccountManager.get(this);
         Account[] accounts = mAm.getAccountsByType(Constants.ACCOUNT_TYPE);
-        Assert.assertTrue(accounts.length < 2); // Sanity is good
-        if (accounts.length > 0) {
+        Assert.assertTrue(accounts.length < 2); // There can only be one: Twitter
+        if (accounts.length == 0) {
             mAccount = accounts[0];
-            mAm.getAuthToken(accounts[0], Constants.AUTHTOKEN_TYPE, true, this, mHandler);
+            mAm.getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, this, null);
         } else {
             mAm.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, this, this, mHandler);
         }
