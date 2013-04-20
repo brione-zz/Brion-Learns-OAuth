@@ -1,6 +1,8 @@
-This is an example of using the Signpost OAuth library in and Android application. It provides the 
-basics of authentication via the Twitter OAuth service, then allows the student to enter Twitter 
-messages into the authenticated user's stream.
+This is an example of performing OAuth authentication using the Signpost OAuth library in 
+an Android application. It provides the basics of authentication via the Twitter OAuth service, 
+then allows the student to enter Twitter messages into the authenticated user's stream.
+
+The UI also displays the authenticated user's full name and last 20 records from the user's Home timeline.
 
 You have to register your application with Twitter to get the Consumer Key and Secret. I still (recently) had to
 enter a real, actual URL as the app's callback on the Twitter dev site. But you still pass the app's callback during
