@@ -91,24 +91,22 @@ public class BloaApp extends Application {
         }
     }
 
-    private static final MyKeysProvider sKeysProvider = new MyKeysProvider();
+    public static final MyKeysProvider sKeysProvider = new MyKeysProvider();
 
-    private static final OAuthConsumer sConsumer = new CommonsHttpOAuthConsumer(
-            sKeysProvider.getKey1(),
-            sKeysProvider.getKey2());
+    private OAuthConsumer mConsumer;
 
-    private static final OAuthProvider sProvider = new CommonsHttpOAuthProvider(
-        Constants.TWITTER_REQUEST_TOKEN_URL,
-        Constants.TWITTER_ACCESS_TOKEN_URL,
-        Constants.TWITTER_AUTHORIZE_URL);
+    private OAuthProvider mProvider;
 
-
-    public static OAuthConsumer getOAuthConsumer() {
-        return sConsumer;
+    public IKeysProvider getKeysProvider() {
+        return sKeysProvider;
     }
 
-    public static OAuthProvider getOAuthProvider() {
-        return sProvider;
+    public OAuthConsumer getOAuthConsumer() {
+        return mConsumer;
+    }
+
+    public OAuthProvider getOAuthProvider() {
+        return mProvider;
     }
 
     public BloaApp mBloaApp;
@@ -119,6 +117,15 @@ public class BloaApp extends Application {
 
         mBloaApp = this;
 
-        sProvider.setOAuth10a(true);
+        mConsumer = new CommonsHttpOAuthConsumer(
+                sKeysProvider.getKey1(),
+                sKeysProvider.getKey2());
+
+        mProvider = new CommonsHttpOAuthProvider(
+                Constants.TWITTER_REQUEST_TOKEN_URL,
+                Constants.TWITTER_ACCESS_TOKEN_URL,
+                Constants.TWITTER_AUTHORIZE_URL);
+
+        mProvider.setOAuth10a(true);
     }
 }

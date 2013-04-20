@@ -62,8 +62,9 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
 
         mAccountManager = AccountManager.get(this);
 
-        mProvider = BloaApp.getOAuthProvider();
-        mConsumer = BloaApp.getOAuthConsumer();
+        BloaApp app = (BloaApp) getApplication();
+        mProvider = app.getOAuthProvider();
+        mConsumer = app.getOAuthConsumer();
 
         mIntent = this.getIntent();
         mResponse = mIntent.getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);

@@ -16,12 +16,11 @@
 package com.eyebrowssoftware.bloa.authenticator;
 
 import oauth.signpost.OAuthConsumer;
-import oauth.signpost.OAuthProvider;
+import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
 
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
-import org.json.JSONObject;
 
 import android.accounts.AbstractAccountAuthenticator;
 import android.accounts.Account;
@@ -51,7 +50,10 @@ public class BloaAuthenticator extends AbstractAccountAuthenticator {
         super(context);
         mContext = context;
 
-        mConsumer = BloaApp.getOAuthConsumer();
+        mConsumer = new CommonsHttpOAuthConsumer(
+                BloaApp.sKeysProvider.getKey1(),
+                BloaApp.sKeysProvider.getKey2());
+
     }
 
     @Override
