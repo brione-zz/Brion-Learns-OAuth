@@ -105,7 +105,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         setContentView(R.layout.main);
 
         mCR = this.getContentResolver();
-        mConsumer = BloaApp.getOAuthConsumer();
+
+        mConsumer = ((BloaApp) getApplication()).getOAuthConsumer();
 
         mCB = (CheckBox) this.findViewById(R.id.enable);
         mCB.setOnClickListener(new LoginCheckBoxClickedListener());
