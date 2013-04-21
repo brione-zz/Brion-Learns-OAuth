@@ -25,8 +25,8 @@ import android.support.v4.widget.SimpleCursorAdapter;
 
 import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.R;
-import com.eyebrowssoftware.bloa.data.UserStatusRecords;
-import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
+import com.eyebrowssoftware.bloa.data.UserTimelineRecords;
+import com.eyebrowssoftware.bloa.data.UserTimelineRecords.UserTimelineRecord;
 
 public class UserTimelineFragment extends ListFragment implements LoaderCallbacks<Cursor> {
     static final String TAG = "UserTimelineFragment";
@@ -47,7 +47,7 @@ public class UserTimelineFragment extends ListFragment implements LoaderCallback
         this.setEmptyText(this.getString(R.string.empty));
         // No cursor yet. Will be assigned when the CursorLoader query is complete
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(this.getActivity(),
-            android.R.layout.simple_list_item_2, null, Constants.USER_STATUS_PROJECTION, IDS, 0);
+            android.R.layout.simple_list_item_2, null, Constants.USER_TIMELINE_PROJECTION, IDS, 0);
         setListAdapter(adapter);
         // Set up our cursor loader. It manages the cursors from now on
         getLoaderManager().initLoader(Constants.LIST_LOADER_ID, null, this);
@@ -55,9 +55,9 @@ public class UserTimelineFragment extends ListFragment implements LoaderCallback
 
     @Override
     public Loader<Cursor> onCreateLoader(int loaderId, Bundle arguments) {
-        return new CursorLoader(getActivity(), UserStatusRecords.CONTENT_URI,
-            Constants.USER_STATUS_PROJECTION, Constants.USER_TIMELINE_QUERY_WHERE, null,
-            UserStatusRecord.DEFAULT_SORT_ORDER);
+        return new CursorLoader(getActivity(), UserTimelineRecords.CONTENT_URI,
+            Constants.USER_TIMELINE_PROJECTION, null, null,
+            UserTimelineRecord.DEFAULT_SORT_ORDER);
     }
 
     @Override

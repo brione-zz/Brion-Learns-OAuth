@@ -70,8 +70,7 @@ import com.eyebrowssoftware.bloa.data.BloaProvider;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
-public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cursor>,
-        AccountManagerCallback<Bundle> {
+public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cursor>, AccountManagerCallback<Bundle> {
     public static final String TAG = "BloaActivity";
 
     private CheckBox mCB;
@@ -81,7 +80,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     private TextView mLastTweetTextView;
 
     private OAuthConsumer mConsumer = BloaApp.getOAuthConsumer();
-    private AccountManager mAm;
     private Account mAccount;
 
     // You'll need to create this or change the name of DefaultKeysProvider
@@ -105,20 +103,26 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         mUserTextView = (TextView) this.findViewById(R.id.user);
         mLastTweetTextView = (TextView) this.findViewById(R.id.last);
 
-        mAm = AccountManager.get(this);
-        Account[] accounts = mAm.getAccountsByType(Constants.ACCOUNT_TYPE);
-        Assert.assertTrue(accounts.length < 2); // There can only be one: Twitter
-        if (accounts.length > 0) {
-            mAccount = accounts[0];
-            mAm.getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
+        mAccount = getAccount();
+        if (mAccount == null) {
+            AccountManager.get(this).addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, null);
         } else {
-            mAm.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, null);
+            AccountManager.get(this).getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
         }
+        // Set up our cursor loader. It manages the cursors from now on
+        getSupportLoaderManager().initLoader(Constants.BLOA_LOADER_ID, null, this);
     }
 
     @Override
     public void onResume() {
         super.onResume();
+    }
+
+    private Account getAccount() {
+        AccountManager am = AccountManager.get(this);
+        Account[] mAccounts = am.getAccountsByType(Constants.ACCOUNT_TYPE);
+        Assert.assertTrue(mAccounts.length < 2); // There can only be one: Twitter
+        return (mAccounts.length > 0) ? mAccounts[0] : null;
     }
 
     class PostButtonClickListener implements OnClickListener {
@@ -149,7 +153,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         public void onClick(View v) {
             if(mCB.isChecked()) {
                 if (mAccount != null) {
-                    mAm.getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
+                    AccountManager.get(BloaActivity.this).getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
                 } else {
                     throw new IllegalStateException("You somehow got here without having an account. That button should be inactive right now");
                 }
@@ -213,9 +217,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     @Override
     public Loader<Cursor> onCreateLoader(int loaderId, Bundle savedValues) {
         // Create a CursorLoader that will take care of creating a cursor for the data
-        return new CursorLoader(this, UserStatusRecords.CONTENT_URI,
-            Constants.USER_STATUS_PROJECTION, Constants.USER_STATUS_QUERY_WHERE,
-            null, UserStatusRecord.DEFAULT_SORT_ORDER);
+        return new CursorLoader(this, UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_PROJECTION,
+                null, null, UserStatusRecord.DEFAULT_SORT_ORDER);
     }
 
     @Override
@@ -252,6 +255,13 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem item = menu.findItem(R.id.refresh_timeline);
+        item.setEnabled(mAccount != null);
+        return super.onPrepareOptionsMenu(menu);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.refresh_timeline:
@@ -277,15 +287,15 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             token = authResult.getString(AccountManager.KEY_ACCOUNT_NAME);
             Assert.assertNotNull(token);
             Log.d(TAG, "token is: " + token);
-            if (mAccount != null) {
-                mAccount = new Account(token, type);
+            if (mAccount == null) {
+                mAccount = getAccount();
             }
             secret = authResult.getString(AccountManager.KEY_AUTHTOKEN);
             if (secret != null) {
                 Log.d(TAG, "secret is: " + secret);
                 mConsumer.setTokenWithSecret(token, secret);
-                setLoggedIn(true);
             }
+            setLoggedIn(secret != null);
         } catch (OperationCanceledException e) {
             e.printStackTrace();
         } catch (AuthenticatorException e) {

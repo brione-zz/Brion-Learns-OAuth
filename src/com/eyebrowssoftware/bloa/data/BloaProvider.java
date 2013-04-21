@@ -31,7 +31,6 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
 
-import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 import com.eyebrowssoftware.bloa.data.UserTimelineRecords.UserTimelineRecord;
 
@@ -48,6 +47,7 @@ public class BloaProvider extends ContentProvider {
     public static final String URI_STRING = "content://" + AUTHORITY;
 
     private static final String USER_STATUS_RECORDS_TABLE_NAME = "user_status_records";
+    private static final String USER_TIMELINE_RECORDS_TABLE_NAME = "user_timeline_records";
 
     public static final String USER_STATUS_PATH = "user_status";
     public static final String USER_TIMELINE_PATH = "user_timeline";
@@ -83,7 +83,6 @@ public class BloaProvider extends ContentProvider {
         sUserStatusProjectionMap.put(UserStatusRecord.USER_TEXT, UserStatusRecord.USER_TEXT);
         sUserStatusProjectionMap.put(UserStatusRecord.CREATED_DATE, UserStatusRecord.CREATED_DATE);
         sUserStatusProjectionMap.put(UserStatusRecord.USER_CREATED_DATE, UserStatusRecord.USER_CREATED_DATE);
-        sUserStatusProjectionMap.put(UserStatusRecord.LATEST_STATUS, UserStatusRecord.LATEST_STATUS);
 
         sUserTimelineProjectionMap.put(UserTimelineRecord._ID, UserTimelineRecord._ID);
         sUserTimelineProjectionMap.put(UserTimelineRecord.RECORD_ID, UserTimelineRecord.RECORD_ID);
@@ -91,7 +90,6 @@ public class BloaProvider extends ContentProvider {
         sUserTimelineProjectionMap.put(UserTimelineRecord.USER_TEXT, UserTimelineRecord.USER_TEXT);
         sUserTimelineProjectionMap.put(UserTimelineRecord.CREATED_DATE, UserTimelineRecord.CREATED_DATE);
         sUserTimelineProjectionMap.put(UserTimelineRecord.USER_CREATED_DATE, UserTimelineRecord.USER_CREATED_DATE);
-        sUserTimelineProjectionMap.put(UserTimelineRecord.LATEST_STATUS, UserTimelineRecord.LATEST_STATUS);
 }
     /**
      *
@@ -118,10 +116,18 @@ public class BloaProvider extends ContentProvider {
                     + UserStatusRecord.USER_NAME + " TEXT,"
                     + UserStatusRecord.USER_TEXT + " TEXT,"
                     + UserStatusRecord.CREATED_DATE + " INTEGER,"
-                    + UserStatusRecord.USER_CREATED_DATE + " TEXT,"
-                    + UserStatusRecord.LATEST_STATUS + " TEXT DEFAULT NULL"
+                    + UserStatusRecord.USER_CREATED_DATE + " TEXT"
                     + ");");
-}
+
+            db.execSQL("CREATE TABLE " + USER_TIMELINE_RECORDS_TABLE_NAME + " ("
+                    + UserTimelineRecord._ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    + UserTimelineRecord.RECORD_ID + " INTEGER,"
+                    + UserTimelineRecord.USER_NAME + " TEXT,"
+                    + UserTimelineRecord.USER_TEXT + " TEXT,"
+                    + UserTimelineRecord.CREATED_DATE + " INTEGER,"
+                    + UserTimelineRecord.USER_CREATED_DATE + " TEXT"
+                    + ");");
+        }
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
@@ -188,27 +194,23 @@ public class BloaProvider extends ContentProvider {
         case USER_STATUS_RECORDS:
             qb.setTables(USER_STATUS_RECORDS_TABLE_NAME);
             qb.setProjectionMap(sUserStatusProjectionMap);
-            qb.appendWhere(Constants.USER_STATUS_QUERY_WHERE);
             c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
             break;
         case USER_STATUS_RECORD_ID:
             qb.setTables(USER_STATUS_RECORDS_TABLE_NAME);
             qb.setProjectionMap(sUserStatusProjectionMap);
-            qb.appendWhere(Constants.USER_STATUS_QUERY_WHERE);
             qb.appendWhere(UserStatusRecord._ID + "="
                     + uri.getPathSegments().get(1));
             c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
             break;
         case USER_TIMELINE_RECORDS:
-            qb.setTables(USER_STATUS_RECORDS_TABLE_NAME);
+            qb.setTables(USER_TIMELINE_RECORDS_TABLE_NAME);
             qb.setProjectionMap(sUserTimelineProjectionMap);
-            qb.appendWhere(Constants.USER_TIMELINE_QUERY_WHERE);
             c = qb.query(db, projection, selection, selectionArgs, null, null, sortOrder);
             break;
         case USER_TIMELINE_RECORD_ID:
-            qb.setTables(USER_STATUS_RECORDS_TABLE_NAME);
+            qb.setTables(USER_TIMELINE_RECORDS_TABLE_NAME);
             qb.setProjectionMap(sUserTimelineProjectionMap);
-            qb.appendWhere(Constants.USER_TIMELINE_QUERY_WHERE);
             qb.appendWhere(UserTimelineRecord._ID + "=" + uri.getPathSegments().get(1));
             c = qb.query(db, projection, selection, selectionArgs, null, null,
                     sortOrder);
@@ -227,6 +229,8 @@ public class BloaProvider extends ContentProvider {
 
         SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         long item_id = -1;
+        Uri ret = null;
+
         ContentValues values = new ContentValues();
         if (initialValues != null) {
             values = initialValues;
@@ -235,24 +239,23 @@ public class BloaProvider extends ContentProvider {
         }
         switch (sUriMatcher.match(uri)) {
         case USER_STATUS_RECORDS:
-            initialValues.put(UserStatusRecord.LATEST_STATUS, UserStatusRecord.LATEST_STATUS_USER);
             item_id = db.insert(USER_STATUS_RECORDS_TABLE_NAME,
-                    UserStatusRecords.UserStatusRecord.CREATED_DATE, values);
+                    UserStatusRecord.CREATED_DATE, values);
+            if (item_id > 0) {
+                ret = ContentUris.withAppendedId(UserStatusRecords.CONTENT_URI, item_id);
+            }
             break;
         case USER_TIMELINE_RECORDS:
-            initialValues.remove(UserStatusRecord.LATEST_STATUS);
-            item_id = db.insert(USER_STATUS_RECORDS_TABLE_NAME,
-                    UserStatusRecords.UserStatusRecord.CREATED_DATE, values);
+            item_id = db.insert(USER_TIMELINE_RECORDS_TABLE_NAME,
+                    UserTimelineRecord.CREATED_DATE, values);
+            if (item_id > 0) {
+                ret = ContentUris.withAppendedId(UserTimelineRecords.CONTENT_URI, item_id);
+            }
             break;
         default:
             throw new IllegalArgumentException("Unknown URI " + uri);
         }
-        Uri ret = null;
-        if (item_id > 0) {
-            ret = ContentUris.withAppendedId(UserStatusRecords.CONTENT_URI,
-                    item_id);
-            mCR.notifyChange(ret, null);
-        }
+        mCR.notifyChange(ret, null);
         return ret;
     }
 
@@ -265,28 +268,25 @@ public class BloaProvider extends ContentProvider {
 
         switch (sUriMatcher.match(uri)) {
         case USER_STATUS_RECORDS:
-            whereClause = "(" + UserStatusRecord.LATEST_STATUS + "=" + UserStatusRecord.LATEST_STATUS_USER + ")"
-                + (!TextUtils.isEmpty(where) ? " AND (" + where + ")" : "");
-            count = db.delete(USER_STATUS_RECORDS_TABLE_NAME, whereClause, whereArgs);
+            count = db.delete(USER_STATUS_RECORDS_TABLE_NAME, where, whereArgs);
             break;
         case USER_STATUS_RECORD_ID:
             recId = uri.getPathSegments().get(1);
 
             whereClause = UserStatusRecord._ID + "=" + recId
-                    + " AND (" + UserStatusRecord.LATEST_STATUS + "=" + UserStatusRecord.LATEST_STATUS_USER + ")"
                     + (!TextUtils.isEmpty(where) ? " AND (" + where + ")" : "");
             count = db.delete(USER_STATUS_RECORDS_TABLE_NAME, whereClause, whereArgs);
             break;
         // TODO: FIX THIS
         case USER_TIMELINE_RECORDS:
-            count = db.delete(USER_STATUS_RECORDS_TABLE_NAME, where, whereArgs);
+            count = db.delete(USER_TIMELINE_RECORDS_TABLE_NAME, where, whereArgs);
             break;
         // TODO: FIX THIS
         case USER_TIMELINE_RECORD_ID:
             recId = uri.getPathSegments().get(1);
             whereClause = UserTimelineRecord._ID + "=" + recId
                     + (!TextUtils.isEmpty(where) ? " AND (" + where + ")" : "");
-            count = db.delete(USER_STATUS_RECORDS_TABLE_NAME, whereClause, whereArgs);
+            count = db.delete(USER_TIMELINE_RECORDS_TABLE_NAME, whereClause, whereArgs);
             break;
         default:
             throw new IllegalArgumentException("Unknown URI " + uri);
@@ -313,6 +313,15 @@ public class BloaProvider extends ContentProvider {
             whereClause = UserStatusRecord._ID + "=" + recId
                     + (!TextUtils.isEmpty(where) ? " AND (" + where + ")" : "");
             count = db.update(USER_STATUS_RECORDS_TABLE_NAME, values, whereClause, whereArgs);
+            break;
+        case USER_TIMELINE_RECORDS:
+            count = db.update(USER_TIMELINE_RECORDS_TABLE_NAME, values, where, whereArgs);
+            break;
+        case USER_TIMELINE_RECORD_ID:
+            recId = uri.getPathSegments().get(1);
+            whereClause = UserTimelineRecord._ID + "=" + recId
+                    + (!TextUtils.isEmpty(where) ? " AND (" + where + ")" : "");
+            count = db.update(USER_TIMELINE_RECORDS_TABLE_NAME, values, whereClause, whereArgs);
             break;
         default:
             throw new IllegalArgumentException("Unknown URI " + uri);

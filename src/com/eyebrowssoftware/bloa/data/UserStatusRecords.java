@@ -54,10 +54,6 @@ public final class UserStatusRecords {
         public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE
                 + "/vnd.com.eyebrowssoftware.bloa.user_status_record";
 
-        public static final String LATEST_STATUS_NEW = "new";
-        public static final String LATEST_STATUS_USER = "true";
-
-
         /**
          * The default sort order for this table
          */
@@ -69,6 +65,5 @@ public final class UserStatusRecords {
         public static final String USER_TEXT = "user_text";
         public static final String USER_CREATED_DATE = "user_created_date";
         public static final String CREATED_DATE = "created_at";
-        public static final String LATEST_STATUS = "latest_status";
     }
 }
