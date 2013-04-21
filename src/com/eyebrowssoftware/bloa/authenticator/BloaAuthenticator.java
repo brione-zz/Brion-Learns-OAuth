@@ -18,7 +18,9 @@ package com.eyebrowssoftware.bloa.authenticator;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
 
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
 
@@ -158,6 +160,15 @@ public class BloaAuthenticator extends AbstractAccountAuthenticator {
                 mConsumer.sign(get);
                 mClient.execute(get, new BasicResponseHandler());
                 return true;
+            } catch (HttpResponseException e) {
+                int status = e.getStatusCode();
+                if (status == HttpStatus.SC_UNAUTHORIZED) {
+                    // TODO: The user secret is invalid, so we've got to invalidate it in the account
+                    throw new IllegalStateException("The current user token is invalid. We need to invalidate it in the account");
+                } else {
+                    e.printStackTrace();
+                }
+                return false;
             } catch (Exception e) {
                 // Expected if we don't have the proper credentials saved away
                 return false;

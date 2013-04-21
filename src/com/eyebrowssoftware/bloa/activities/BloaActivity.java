@@ -30,14 +30,10 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -46,12 +42,9 @@ import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
@@ -72,6 +65,7 @@ import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.IKeysProvider;
 import com.eyebrowssoftware.bloa.MyKeysProvider;
 import com.eyebrowssoftware.bloa.R;
+import com.eyebrowssoftware.bloa.data.BloaProvider;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
@@ -89,8 +83,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     private AccountManager mAm;
     private Account mAccount;
     private ContentResolver mCR;
-
-    private Handler mHandler = new Handler();
 
     private Boolean mIsLoggedIn = false;
 
@@ -125,7 +117,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         if (accounts.length > 0) {
             mAccount = accounts[0];
         } else {
-            mAm.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, mHandler);
+            mAm.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, null);
         }
     }
 
@@ -136,23 +128,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             // Assume we're logged in, for now, so we can move some code here
             setLoggedIn(mIsLoggedIn);
          }
-    }
-    private int deleteTimelineRecords() {
-        return mCR.delete(UserStatusRecords.CONTENT_URI, Constants.USER_TIMELINE_QUERY_WHERE, null);
-    }
-
-    private int deleteStatusRecord() {
-        return mCR.delete(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_QUERY_WHERE, null);
-    }
-
-    private ContentValues parseTimelineJSONObject(JSONObject object) throws JSONException {
-        ContentValues values = new ContentValues();
-        JSONObject user = object.getJSONObject("user");
-        values.put(UserStatusRecord.USER_NAME, user.getString("name"));
-        values.put(UserStatusRecord.RECORD_ID, user.getInt("id_str"));
-        values.put(UserStatusRecord.USER_CREATED_DATE, object.getString("created_at"));
-        values.put(UserStatusRecord.USER_TEXT, object.getString("text"));
-        return values;
     }
 
     class PostButtonClickListener implements OnClickListener {
@@ -171,28 +146,21 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         mCB.setChecked(loggedIn);
         mButton.setEnabled(loggedIn);
         mEditor.setEnabled(loggedIn);
-        if (loggedIn) {
-            TimelineSelector ss = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
-            new GetTimelineTask().execute(ss);
-        } else {
-            mEditor.setText(null);
-            mUserTextView.setText(null);
-            this.mLastTweetTextView.setText(null);
-            deleteStatusRecord();
-            deleteTimelineRecords();
-        }
-
+        mEditor.setText(null);
+        mUserTextView.setText(null);
+        this.mLastTweetTextView.setText(null);
     }
 
     class LoginCheckBoxClickedListener implements OnClickListener {
 
+        @SuppressWarnings("deprecation")
         @Override
         public void onClick(View v) {
             if(mCB.isChecked()) {
                 if (mAccount != null) {
                     mAm.getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
                 } else {
-                    mAm.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, mHandler);
+                    throw new IllegalStateException("You somehow got here without having an account. That button should be inactive right now");
                 }
             } else {
                 setLoggedIn(false);
@@ -201,67 +169,15 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
     }
 
-    private ContentValues parseVerifyUserJSONObject(JSONObject object) throws JSONException {
-        ContentValues values = new ContentValues();
-        values.put(UserStatusRecord.USER_NAME, object.getString("name"));
-        values.put(UserStatusRecord.RECORD_ID, object.getInt("id_str"));
-        values.put(UserStatusRecord.USER_CREATED_DATE, object.getString("created_at"));
-        JSONObject status = object.getJSONObject("status");
-        values.put(UserStatusRecord.USER_TEXT, status.getString("text"));
-        return values;
-    }
-
-
-    class GetCredentialsTask extends AsyncTask<Void, Void, Boolean> {
-
-        HttpClient mClient = BloaApp.getHttpClient();
-        @Override
-        protected Boolean doInBackground(Void... arg0) {
-            JSONObject jso = null;
-            HttpGet get = new HttpGet(Constants.VERIFY_URL_STRING);
-            try {
-                mConsumer.sign(get);
-                String response = mClient.execute(get, new BasicResponseHandler());
-                if (response != null) {
-                    jso = new JSONObject(response);
-                    BloaApp.makeNewUserStatusRecord(BloaActivity.this.getContentResolver(), parseVerifyUserJSONObject(jso));
-                    return true;
-                } else {
-                    Log.e(TAG, "PostTask: null response text");
-                    throw new IllegalStateException("Expected some text in the Http response");
-                }
-            } catch (Exception e) {
-                // Expected if we don't have the proper credentials saved away
-            }
-            return false;
-        }
-
-        // This is in the UI thread, so we can mess with the UI
-        @Override
-        protected void onPostExecute(Boolean loggedIn) {
-            super.onPostExecute(loggedIn);
-       }
-    }
-
-
-
     //----------------------------
     // This task posts a message to your message queue on the service.
-    class PostTask extends AsyncTask<String, Void, Void> {
+    static class PostTask extends AsyncTask<String, Void, Void> {
 
-        ProgressDialogFragment mDialog;
         HttpClient mClient = BloaApp.getHttpClient();
-
-        @Override
-        protected void onPreExecute() {
-            mDialog = ProgressDialogFragment.newInstance(R.string.tweet_progress_title, R.string.tweet_progress_text);
-            mDialog.show(getSupportFragmentManager(), "auth");
-        }
+        OAuthConsumer mConsumer = BloaApp.getOAuthConsumer();
 
         @Override
         protected Void doInBackground(String... params) {
-
-            JSONObject jso = null;
             try {
 
                 HttpPost post = new HttpPost(Constants.STATUSES_URL_STRING);
@@ -270,14 +186,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 post.setEntity(new UrlEncodedFormEntity(out, HTTP.UTF_8));
                 // sign the request to authenticate
                 mConsumer.sign(post);
-                String response = mClient.execute(post, new BasicResponseHandler());
-                if (response != null) {
-                    jso = new JSONObject(response);
-                    BloaApp.makeNewUserStatusRecord(mCR, parseTimelineJSONObject(jso));
-                } else {
-                    Log.e(TAG, "PostTask: null response text");
-                    throw new IllegalStateException("Expected some text in the Http response");
-                }
+                mClient.execute(post, new BasicResponseHandler());
             } catch (HttpResponseException e) {
                 int status = e.getStatusCode();
                 if (status == HttpStatus.SC_UNAUTHORIZED) {
@@ -298,102 +207,12 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
             }
             return null;
-        }
-
-        // This is in the UI thread, so we can mess with the UI
-        protected void onPostExecute(Void nada) {
-            super.onPostExecute(nada);
-            mDialog.dismiss();
-            BloaActivity.this.mEditor.setText(null);
         }
     }
 
 
-    class TimelineSelector extends Object {
-        public String url; // the url to perform the query from
-        // not all these apply to every url - you are responsible
-        public Long since_id; // ids newer than this will be fetched
-        public Long max_id; // ids older than this will be fetched
-        public Integer count; // # of tweets to fetch Max is 200
-        public Integer page; // # of page to fetch (with limits)
-
-        public TimelineSelector(String u) {
-            url = u;
-            max_id = null;
-            since_id = null;
-            count = null;
-            page = null;
-        }
-
-        public TimelineSelector(String u, Long since, Long max, Integer cnt, Integer pg) {
-            url = u;
-            max_id = max;
-            since_id = since;
-            count = cnt;
-            page = pg;
-        }
-    }
-
-    class GetTimelineTask extends AsyncTask<TimelineSelector, Void, Void> {
-
-        ProgressDialogFragment mDialog;
-        HttpClient mClient = BloaApp.getHttpClient();
-
-        @Override
-        protected void onPreExecute() {
-            mDialog = ProgressDialogFragment.newInstance(R.string.timeline_progress_title, R.string.timeline_progress_text);
-            mDialog.show(BloaActivity.this.getSupportFragmentManager(), "auth");
-        }
-
-        @Override
-        protected Void doInBackground(TimelineSelector... params) {
-            JSONArray array = null;
-            try {
-                Uri sUri = Uri.parse(params[0].url);
-                Uri.Builder builder = sUri.buildUpon();
-                if(params[0].since_id != null) {
-                    builder.appendQueryParameter("since_id", String.valueOf(params[0].since_id));
-                } else if (params[0].max_id != null) { // these are mutually exclusive
-                    builder.appendQueryParameter("max_id", String.valueOf(params[0].max_id));
-                }
-                if(params[0].count != null) {
-                    builder.appendQueryParameter("count", String.valueOf((params[0].count > 200) ? 200 : params[0].count));
-                }
-                if(params[0].page != null) {
-                    builder.appendQueryParameter("page", String.valueOf(params[0].page));
-                }
-                HttpGet get = new HttpGet(builder.build().toString());
-                mConsumer.sign(get);
-                String response = mClient.execute(get, new BasicResponseHandler());
-                if (response != null) {
-                    array = new JSONArray(response);
-                    // Delete the existing timeline
-                    ContentValues[] values = new ContentValues[array.length()];
-                    for(int i = 0; i < array.length(); ++i) {
-                        JSONObject status = array.getJSONObject(i);
-                        values[i] = parseTimelineJSONObject(status);
-                    }
-                    mCR.bulkInsert(UserStatusRecords.CONTENT_URI, values);
-                } else {
-                    Log.e(TAG, "GetTimelineTask: null response text");
-                    throw new IllegalStateException("Expected some text in the Http response");
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Get Timeline Exception", e);
-            }
-            return null;
-        }
-
-        // This is in the UI thread, so we can mess with the UI
-        @Override
-        protected void onPostExecute(Void nada) {
-            mDialog.dismiss();
-        }
-}
 
     @Override
     public Loader<Cursor> onCreateLoader(int loaderId, Bundle savedValues) {
@@ -440,9 +259,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.refresh_timeline:
-            deleteTimelineRecords();
-            TimelineSelector ss = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
-            new GetTimelineTask().execute(ss);
+            ContentResolver.requestSync(mAccount, BloaProvider.AUTHORITY, new Bundle());
             return true;
         default:
             return false;
@@ -457,32 +274,28 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         String type = null;
         try {
             Bundle authResult = futureResult.getResult();
+
             type = authResult.getString(AccountManager.KEY_ACCOUNT_TYPE);
-            Assert.assertNotNull(type);
             Assert.assertEquals(Constants.ACCOUNT_TYPE, type);
 
             token = authResult.getString(AccountManager.KEY_ACCOUNT_NAME);
             Assert.assertNotNull(token);
-            Log.d(TAG, "token is" + token);
-
+            Log.d(TAG, "token is: " + token);
+            if (mAccount != null) {
+                mAccount = new Account(token, type);
+            }
             secret = authResult.getString(AccountManager.KEY_AUTHTOKEN);
             if (secret != null) {
-                Log.d(TAG, "secret is" + secret);
+                Log.d(TAG, "secret is: " + secret);
                 mConsumer.setTokenWithSecret(token, secret);
-                new GetCredentialsTask().execute();
-            } else {
-                // TODO AccountManager.get(BloaActivity.this).getAuthToken(account, authTokenType, notifyAuthFailure, callback, handler)
-                Log.d(TAG, "No secret in future result");
+                setLoggedIn(mIsLoggedIn = true);
             }
         } catch (OperationCanceledException e) {
-            setLoggedIn(false);
-            String toast = String.format(getString(R.string.account_canceled_toast_format), Constants.ACCOUNT_TYPE);
-            Toast.makeText(this, toast, Toast.LENGTH_LONG).show();
+            e.printStackTrace();
         } catch (AuthenticatorException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
 }

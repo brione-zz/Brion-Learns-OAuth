@@ -31,7 +31,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.provider.ContactsContract;
 import android.util.Log;
 import android.view.Window;
 import android.widget.Toast;
@@ -39,6 +38,7 @@ import android.widget.Toast;
 import com.eyebrowssoftware.bloa.BloaApp;
 import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.R;
+import com.eyebrowssoftware.bloa.data.BloaProvider;
 
 public class OAuthActivity extends AccountAuthenticatorActivity {
     static final String TAG = "OAuthActivity";
@@ -201,11 +201,14 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         Log.i(TAG, "finishLogin()");
         final Account account = new Account(token, Constants.ACCOUNT_TYPE);
         if (mRequestNewAccount) {
-            AccountManager.get(this).addAccountExplicitly(account, secret, null);
+            Bundle specific = new Bundle();
+            specific.putString(Constants.PARAM_USERNAME, token);
+            specific.putString(Constants.PARAM_PASSWORD, null);
+            AccountManager.get(this).addAccountExplicitly(account, secret, specific);
             // Set contacts sync for this account.
-            ContentResolver.setSyncAutomatically(account, ContactsContract.AUTHORITY, true);
+            ContentResolver.setSyncAutomatically(account, BloaProvider.AUTHORITY, true);
         } else {
-            AccountManager.get(this).setPassword(account, secret);
+            AccountManager.get(this).setPassword(account, null);
         }
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, token);

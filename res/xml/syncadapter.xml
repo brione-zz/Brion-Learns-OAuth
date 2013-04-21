@@ -33,5 +33,5 @@
     android:contentAuthority="com.eyebrowssoftware.bloa"
     android:accountType="com.eyebrowssoftware.bloa.twitter"
     android:supportsUploading="false"
-    android:userVisible="true"
+    android:userVisible="false"
 />
