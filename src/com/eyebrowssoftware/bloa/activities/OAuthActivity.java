@@ -52,9 +52,8 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
 
-        BloaApp app = (BloaApp) getApplication();
-        mProvider = app.getOAuthProvider();
-        mConsumer = app.getOAuthConsumer();
+        mProvider = BloaApp.getOAuthProvider();
+        mConsumer = BloaApp.getOAuthConsumer();
 
         Intent mIntent = this.getIntent();
         String token = mIntent.getStringExtra(Constants.PARAM_USERNAME);

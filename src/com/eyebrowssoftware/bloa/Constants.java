@@ -47,7 +47,7 @@ public class Constants {
     public static final int BLOA_LOADER_ID = 1;
     public static final int LIST_LOADER_ID = 2;
 
-    public static final String USER_STATUS_QUERY_WHERE = UserStatusRecord.LATEST_STATUS + " NOTNULL";
+    public static final String USER_STATUS_QUERY_WHERE = UserStatusRecord.LATEST_STATUS + "=" + UserStatusRecord.LATEST_STATUS_USER;
     public static final String USER_TIMELINE_QUERY_WHERE = UserStatusRecord.LATEST_STATUS + " ISNULL";
 
     public static final String[] USER_STATUS_PROJECTION = {

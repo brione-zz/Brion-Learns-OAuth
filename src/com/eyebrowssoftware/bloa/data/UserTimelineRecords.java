@@ -17,58 +17,42 @@ package com.eyebrowssoftware.bloa.data;
 
 import android.content.ContentResolver;
 import android.net.Uri;
-import android.provider.BaseColumns;
+
+import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
 /**
  * @author brionemde
  *
  */
-public final class UserStatusRecords {
+public final class UserTimelineRecords {
 
     // Private constructor - This class cannot be instantiated
-    private UserStatusRecords() {
+    private UserTimelineRecords() {
     }
 
     /**
      * The content:// style URL for this table
      */
     public static final Uri CONTENT_URI =
-        BloaProvider.CONTENT_URI.buildUpon().appendPath(BloaProvider.USER_STATUS_PATH).build();
+        BloaProvider.CONTENT_URI.buildUpon().appendPath(BloaProvider.USER_TIMELINE_PATH).build();
 
     /**
      * The MIME type of {@link #CONTENT_URI} providing a directory of
      * breweries.
      */
     public static final String CONTENT_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE
-        + "/vnd.com.eyebrowssoftware.bloa.user_status_record";
+        + "/vnd.com.eyebrowssoftware.bloa.user_timeline_record";
 
     /**
      * @author brionemde
      *
      */
-    public static class UserStatusRecord implements BaseColumns {
+    public static class UserTimelineRecord extends UserStatusRecord {
         /**
          * The MIME type of a {@link #CONTENT_URI} sub-directory of a single
          * note.
          */
         public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE
                 + "/vnd.com.eyebrowssoftware.bloa.user_status_record";
-
-        public static final String LATEST_STATUS_NEW = "new";
-        public static final String LATEST_STATUS_USER = "true";
-
-
-        /**
-         * The default sort order for this table
-         */
-        public static final String DEFAULT_SORT_ORDER = UserStatusRecord.CREATED_DATE + " DESC";
-
-        public static final String _ID = BaseColumns._ID;
-        public static final String RECORD_ID = "user_id";
-        public static final String USER_NAME = "user_name";
-        public static final String USER_TEXT = "user_text";
-        public static final String USER_CREATED_DATE = "user_created_date";
-        public static final String CREATED_DATE = "created_at";
-        public static final String LATEST_STATUS = "latest_status";
     }
 }
