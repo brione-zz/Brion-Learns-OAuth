@@ -48,7 +48,7 @@ import android.util.Log;
 
 import com.eyebrowssoftware.bloa.BloaApp;
 import com.eyebrowssoftware.bloa.Constants;
-import com.eyebrowssoftware.bloa.MyKeysProvider;
+import com.eyebrowssoftware.bloa.IKeysProvider;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 import com.eyebrowssoftware.bloa.data.UserTimelineRecords;
@@ -67,7 +67,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     private HttpClient mClient = BloaApp.getHttpClient();
     private final TimelineSelector mTimelineSelector = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
-    private final MyKeysProvider sKeysProvider = new MyKeysProvider();
+    private final IKeysProvider sKeysProvider = BloaApp.getKeysProvider();
     private final OAuthConsumer mConsumer = new CommonsHttpOAuthConsumer(sKeysProvider.getKey1(), sKeysProvider.getKey2());
     private static final boolean NOTIFY_AUTH_FAILURE = true;
 

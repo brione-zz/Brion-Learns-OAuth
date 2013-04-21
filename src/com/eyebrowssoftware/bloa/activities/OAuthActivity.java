@@ -19,6 +19,8 @@ import junit.framework.Assert;
 import oauth.signpost.OAuth;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.OAuthProvider;
+import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
+import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
 import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
@@ -37,6 +39,7 @@ import android.widget.Toast;
 
 import com.eyebrowssoftware.bloa.BloaApp;
 import com.eyebrowssoftware.bloa.Constants;
+import com.eyebrowssoftware.bloa.IKeysProvider;
 import com.eyebrowssoftware.bloa.R;
 import com.eyebrowssoftware.bloa.data.BloaProvider;
 
@@ -52,8 +55,15 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
 
-        mProvider = BloaApp.getOAuthProvider();
-        mConsumer = BloaApp.getOAuthConsumer();
+        mProvider = new CommonsHttpOAuthProvider(
+                Constants.TWITTER_REQUEST_TOKEN_URL,
+                Constants.TWITTER_ACCESS_TOKEN_URL,
+                Constants.TWITTER_AUTHORIZE_URL);
+
+        mProvider.setOAuth10a(true);
+
+        IKeysProvider keys = BloaApp.getKeysProvider();
+        mConsumer =  new CommonsHttpOAuthConsumer(keys.getKey1(), keys.getKey2());
 
         Intent mIntent = this.getIntent();
         String token = mIntent.getStringExtra(Constants.PARAM_USERNAME);
