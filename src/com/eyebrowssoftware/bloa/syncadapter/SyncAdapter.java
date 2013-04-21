@@ -67,13 +67,14 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     private HttpClient mClient = BloaApp.getHttpClient();
     private final TimelineSelector mTimelineSelector = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
-    private final IKeysProvider sKeysProvider = BloaApp.getKeysProvider();
-    private final OAuthConsumer mConsumer = new CommonsHttpOAuthConsumer(sKeysProvider.getKey1(), sKeysProvider.getKey2());
+    private OAuthConsumer mConsumer;
     private static final boolean NOTIFY_AUTH_FAILURE = true;
 
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
         Log.d(TAG, "Sync adapter constructor");
+        IKeysProvider keys = BloaApp.getKeysProvider();
+        mConsumer = new CommonsHttpOAuthConsumer(keys.getKey1(), keys.getKey2());
     }
 
     @Override
@@ -154,6 +155,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private void syncUserTimeline(ContentProviderClient provider, SyncResult syncResult) {
         JSONArray array = null;
         try {
+            provider.delete(UserTimelineRecords.CONTENT_URI, null, null);
             Uri sUri = Uri.parse(mTimelineSelector.url);
             Uri.Builder builder = sUri.buildUpon();
             if(mTimelineSelector.since_id != null) {
