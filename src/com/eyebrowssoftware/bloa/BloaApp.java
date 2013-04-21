@@ -27,13 +27,8 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
 import android.app.Application;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.SharedPreferences;
 import android.util.Log;
-
-import com.eyebrowssoftware.bloa.data.UserStatusRecords;
-import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
 
 public class BloaApp extends Application {

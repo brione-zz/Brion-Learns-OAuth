@@ -42,6 +42,7 @@ import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -79,26 +80,19 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     private TextView mUserTextView;
     private TextView mLastTweetTextView;
 
-    private OAuthConsumer mConsumer = null;
+    private OAuthConsumer mConsumer = BloaApp.getOAuthConsumer();
     private AccountManager mAm;
     private Account mAccount;
-    private ContentResolver mCR;
-
-    private Boolean mIsLoggedIn = false;
 
     // You'll need to create this or change the name of DefaultKeysProvider
     IKeysProvider mKeysProvider = new MyKeysProvider();
 
-    // TODO: decide to move the minSdkVersion forward or not
+    @SuppressWarnings("deprecation")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.main);
-
-        mCR = this.getContentResolver();
-
-        mConsumer = ((BloaApp) getApplication()).getOAuthConsumer();
 
         mCB = (CheckBox) this.findViewById(R.id.enable);
         mCB.setOnClickListener(new LoginCheckBoxClickedListener());
@@ -116,6 +110,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         Assert.assertTrue(accounts.length < 2); // There can only be one: Twitter
         if (accounts.length > 0) {
             mAccount = accounts[0];
+            mAm.getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
         } else {
             mAm.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, null);
         }
@@ -124,10 +119,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     @Override
     public void onResume() {
         super.onResume();
-        if (mAccount != null) {
-            // Assume we're logged in, for now, so we can move some code here
-            setLoggedIn(mIsLoggedIn);
-         }
     }
 
     class PostButtonClickListener implements OnClickListener {
@@ -137,7 +128,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             if (postString.length() == 0) {
                 Toast.makeText(BloaActivity.this, getText(R.string.tweet_empty), Toast.LENGTH_SHORT).show();
             } else {
-                new PostTask().execute(postString);
+                new PostTask(BloaActivity.this).execute(postString);
             }
         }
     }
@@ -175,6 +166,11 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
         HttpClient mClient = BloaApp.getHttpClient();
         OAuthConsumer mConsumer = BloaApp.getOAuthConsumer();
+        Context mContext;
+
+        public PostTask(Context context) {
+            mContext = context;
+        }
 
         @Override
         protected Void doInBackground(String... params) {
@@ -190,8 +186,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             } catch (HttpResponseException e) {
                 int status = e.getStatusCode();
                 if (status == HttpStatus.SC_UNAUTHORIZED) {
-                    // TODO: The user secret is invalid, so we've got to invalidate it in the account
-                    Log.e(TAG, "Unauthorized status returned: User secret needs to be invalidated in the account", e);
+                    AccountManager.get(mContext).invalidateAuthToken(Constants.ACCOUNT_TYPE, mConsumer.getConsumerSecret());
+                    e.printStackTrace();
                 } else {
                     e.printStackTrace();
                 }
@@ -262,7 +258,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             ContentResolver.requestSync(mAccount, BloaProvider.AUTHORITY, new Bundle());
             return true;
         default:
-            return false;
+            return super.onOptionsItemSelected(item);
         }
     }
 
@@ -288,7 +284,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             if (secret != null) {
                 Log.d(TAG, "secret is: " + secret);
                 mConsumer.setTokenWithSecret(token, secret);
-                setLoggedIn(mIsLoggedIn = true);
+                setLoggedIn(true);
             }
         } catch (OperationCanceledException e) {
             e.printStackTrace();

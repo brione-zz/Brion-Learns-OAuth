@@ -15,9 +15,15 @@
  */
 package com.eyebrowssoftware.bloa.syncadapter;
 
+import java.io.IOException;
+
 import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
+import oauth.signpost.exception.OAuthCommunicationException;
+import oauth.signpost.exception.OAuthExpectationFailedException;
+import oauth.signpost.exception.OAuthMessageSignerException;
 
+import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
@@ -33,6 +39,7 @@ import android.content.Context;
 import android.content.SyncResult;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.RemoteException;
 import android.util.Log;
 
 import com.eyebrowssoftware.bloa.BloaApp;
@@ -98,8 +105,27 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 Log.e(TAG, "Sync User Status: null response text");
                 throw new IllegalStateException("Expected some text in the Http response");
             }
-        } catch (Exception e) {
-            // Expected if we don't have the proper credentials saved away
+        } catch (final IOException e) {
+            e.printStackTrace();
+            syncResult.stats.numIoExceptions++;
+        } catch (final ParseException e) {
+            e.printStackTrace();
+            syncResult.stats.numParseExceptions++;
+        } catch (final JSONException e) {
+            e.printStackTrace();
+            syncResult.stats.numParseExceptions++;
+        } catch (RemoteException e) {
+            syncResult.stats.numIoExceptions++;
+            e.printStackTrace();
+        } catch (OAuthMessageSignerException e) {
+            e.printStackTrace();
+            syncResult.stats.numAuthExceptions++;
+        } catch (OAuthExpectationFailedException e) {
+            syncResult.stats.numAuthExceptions++;
+            e.printStackTrace();
+        } catch (OAuthCommunicationException e) {
+            e.printStackTrace();
+            syncResult.stats.numIoExceptions++;
         }
     }
 
@@ -135,8 +161,27 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 Log.e(TAG, "GetTimelineTask: null response text");
                 throw new IllegalStateException("Expected some text in the Http response");
             }
-        } catch (Exception e) {
-            Log.e(TAG, "Get Timeline Exception", e);
+        } catch (final IOException e) {
+            e.printStackTrace();
+            syncResult.stats.numIoExceptions++;
+        } catch (final ParseException e) {
+            e.printStackTrace();
+            syncResult.stats.numParseExceptions++;
+        } catch (final JSONException e) {
+            e.printStackTrace();
+            syncResult.stats.numParseExceptions++;
+        } catch (RemoteException e) {
+            syncResult.stats.numIoExceptions++;
+            e.printStackTrace();
+        } catch (OAuthMessageSignerException e) {
+            e.printStackTrace();
+            syncResult.stats.numAuthExceptions++;
+        } catch (OAuthExpectationFailedException e) {
+            syncResult.stats.numAuthExceptions++;
+            e.printStackTrace();
+        } catch (OAuthCommunicationException e) {
+            e.printStackTrace();
+            syncResult.stats.numIoExceptions++;
         }
 
     }
@@ -149,7 +194,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
      * @author brionemde
      *
      */
-    private class TimelineSelector {
+    class TimelineSelector {
         public String url; // the url to perform the query from
         // not all these apply to every url - you are responsible
         public Long since_id; // ids newer than this will be fetched
@@ -165,7 +210,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             page = null;
         }
 
-        @SuppressWarnings("unused")
         public TimelineSelector(String u, Long since, Long max, Integer cnt, Integer pg) {
             url = u;
             max_id = max;
