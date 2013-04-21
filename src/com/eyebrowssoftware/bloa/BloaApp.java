@@ -15,11 +15,6 @@
  */
 package com.eyebrowssoftware.bloa;
 
-import oauth.signpost.OAuthConsumer;
-import oauth.signpost.OAuthProvider;
-import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
-import oauth.signpost.commonshttp.CommonsHttpOAuthProvider;
-
 import org.apache.http.client.HttpClient;
 import org.apache.http.conn.params.ConnManagerParams;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -27,36 +22,10 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
 import android.app.Application;
-import android.content.SharedPreferences;
-import android.util.Log;
 
 
 public class BloaApp extends Application {
     static final String TAG = "App";
-
-
-    public static void saveRequestInformation(SharedPreferences settings, String token, String secret) {
-        // null means to clear the old values
-        SharedPreferences.Editor editor = settings.edit();
-        if(token == null) {
-            editor.remove(Constants.REQUEST_TOKEN);
-            Log.d(TAG, "Clearing Request Token");
-        }
-        else {
-            editor.putString(Constants.REQUEST_TOKEN, token);
-            Log.d(TAG, "Saving Request Token: " + token);
-        }
-        if (secret == null) {
-            editor.remove(Constants.REQUEST_SECRET);
-            Log.d(TAG, "Clearing Request Secret");
-        }
-        else {
-            editor.putString(Constants.REQUEST_SECRET, secret);
-            Log.d(TAG, "Saving Request Secret: " + secret);
-        }
-        editor.commit();
-
-    }
 
     /**
      * Configures the httpClient to connect to the URL provided.
@@ -70,32 +39,13 @@ public class BloaApp extends Application {
         return httpClient;
     }
 
-    public static final MyKeysProvider sKeysProvider = new MyKeysProvider();
+    public static IKeysProvider sKeysProvider = new MyKeysProvider();
 
-    public static OAuthConsumer mConsumer = new CommonsHttpOAuthConsumer(sKeysProvider.getKey1(), sKeysProvider.getKey2());
-
-    public static OAuthProvider mProvider = new CommonsHttpOAuthProvider(
-            Constants.TWITTER_REQUEST_TOKEN_URL,
-            Constants.TWITTER_ACCESS_TOKEN_URL,
-            Constants.TWITTER_AUTHORIZE_URL);
-
-    public static OAuthConsumer getOAuthConsumer() {
-        return mConsumer;
+    public static IKeysProvider getKeysProvider() {
+        return sKeysProvider;
     }
 
-    public static OAuthProvider getOAuthProvider() {
-        return mProvider;
-    }
-
-    public BloaApp mBloaApp;
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-
-        mBloaApp = this;
-
-
-        mProvider.setOAuth10a(true);
+    public static void setKeysProvider(IKeysProvider provider) {
+        sKeysProvider = provider;
     }
 }

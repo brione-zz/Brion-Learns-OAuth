@@ -65,5 +65,6 @@ public final class UserStatusRecords {
         public static final String USER_TEXT = "user_text";
         public static final String USER_CREATED_DATE = "user_created_date";
         public static final String CREATED_DATE = "created_at";
+        public static final String IS_NEW = "is_new";
     }
 }

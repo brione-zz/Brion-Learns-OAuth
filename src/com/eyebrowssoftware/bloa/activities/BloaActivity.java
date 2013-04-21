@@ -21,6 +21,7 @@ import java.util.LinkedList;
 
 import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
+import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
 import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
@@ -79,7 +80,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     private TextView mUserTextView;
     private TextView mLastTweetTextView;
 
-    private OAuthConsumer mConsumer = BloaApp.getOAuthConsumer();
+    private final IKeysProvider keysProvider = BloaApp.getKeysProvider();
+    private final OAuthConsumer mConsumer =  new CommonsHttpOAuthConsumer(keysProvider.getKey1(), keysProvider.getKey2());
     private Account mAccount;
 
     // You'll need to create this or change the name of DefaultKeysProvider
@@ -132,7 +134,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             if (postString.length() == 0) {
                 Toast.makeText(BloaActivity.this, getText(R.string.tweet_empty), Toast.LENGTH_SHORT).show();
             } else {
-                new PostTask(BloaActivity.this).execute(postString);
+                new PostTask(BloaActivity.this, mConsumer).execute(postString);
             }
         }
     }
@@ -169,11 +171,12 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     static class PostTask extends AsyncTask<String, Void, Void> {
 
         HttpClient mClient = BloaApp.getHttpClient();
-        OAuthConsumer mConsumer = BloaApp.getOAuthConsumer();
+        OAuthConsumer mConsumer;
         Context mContext;
 
-        public PostTask(Context context) {
+        public PostTask(Context context, OAuthConsumer consumer) {
             mContext = context;
+            mConsumer = consumer;
         }
 
         @Override

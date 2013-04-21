@@ -83,6 +83,7 @@ public class BloaProvider extends ContentProvider {
         sUserStatusProjectionMap.put(UserStatusRecord.USER_TEXT, UserStatusRecord.USER_TEXT);
         sUserStatusProjectionMap.put(UserStatusRecord.CREATED_DATE, UserStatusRecord.CREATED_DATE);
         sUserStatusProjectionMap.put(UserStatusRecord.USER_CREATED_DATE, UserStatusRecord.USER_CREATED_DATE);
+        sUserStatusProjectionMap.put(UserStatusRecord.IS_NEW, UserStatusRecord.IS_NEW);
 
         sUserTimelineProjectionMap.put(UserTimelineRecord._ID, UserTimelineRecord._ID);
         sUserTimelineProjectionMap.put(UserTimelineRecord.RECORD_ID, UserTimelineRecord.RECORD_ID);
@@ -90,7 +91,7 @@ public class BloaProvider extends ContentProvider {
         sUserTimelineProjectionMap.put(UserTimelineRecord.USER_TEXT, UserTimelineRecord.USER_TEXT);
         sUserTimelineProjectionMap.put(UserTimelineRecord.CREATED_DATE, UserTimelineRecord.CREATED_DATE);
         sUserTimelineProjectionMap.put(UserTimelineRecord.USER_CREATED_DATE, UserTimelineRecord.USER_CREATED_DATE);
-}
+    }
     /**
      *
      */
@@ -116,7 +117,8 @@ public class BloaProvider extends ContentProvider {
                     + UserStatusRecord.USER_NAME + " TEXT,"
                     + UserStatusRecord.USER_TEXT + " TEXT,"
                     + UserStatusRecord.CREATED_DATE + " INTEGER,"
-                    + UserStatusRecord.USER_CREATED_DATE + " TEXT"
+                    + UserStatusRecord.USER_CREATED_DATE + " TEXT,"
+                    + UserStatusRecord.IS_NEW + " TEXT"
                     + ");");
 
             db.execSQL("CREATE TABLE " + USER_TIMELINE_RECORDS_TABLE_NAME + " ("
