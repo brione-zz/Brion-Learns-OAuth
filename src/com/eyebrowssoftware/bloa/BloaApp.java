@@ -75,34 +75,20 @@ public class BloaApp extends Application {
         return httpClient;
     }
 
-    // This will end up part of a furture SyncAdapter
-    public static void makeNewUserStatusRecord(ContentResolver cr, ContentValues values) {
-        // Delete any existing records for user
-        cr.delete(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_QUERY_WHERE, null);
-        try {
-            // Distinguish this as a User Status singleton, regardless of origin
-            values.put(UserStatusRecord.LATEST_STATUS, "true");
-            cr.insert(UserStatusRecords.CONTENT_URI, values);
-        } catch (Exception e) {
-            Log.e(TAG, "Exception adding users status record", e);
-        }
-    }
-
     public static final MyKeysProvider sKeysProvider = new MyKeysProvider();
 
-    private OAuthConsumer mConsumer;
+    public static OAuthConsumer mConsumer = new CommonsHttpOAuthConsumer(sKeysProvider.getKey1(), sKeysProvider.getKey2());
 
-    private OAuthProvider mProvider;
+    public static OAuthProvider mProvider = new CommonsHttpOAuthProvider(
+            Constants.TWITTER_REQUEST_TOKEN_URL,
+            Constants.TWITTER_ACCESS_TOKEN_URL,
+            Constants.TWITTER_AUTHORIZE_URL);
 
-    public IKeysProvider getKeysProvider() {
-        return sKeysProvider;
-    }
-
-    public OAuthConsumer getOAuthConsumer() {
+    public static OAuthConsumer getOAuthConsumer() {
         return mConsumer;
     }
 
-    public OAuthProvider getOAuthProvider() {
+    public static OAuthProvider getOAuthProvider() {
         return mProvider;
     }
 
@@ -114,14 +100,6 @@ public class BloaApp extends Application {
 
         mBloaApp = this;
 
-        mConsumer = new CommonsHttpOAuthConsumer(
-                sKeysProvider.getKey1(),
-                sKeysProvider.getKey2());
-
-        mProvider = new CommonsHttpOAuthProvider(
-                Constants.TWITTER_REQUEST_TOKEN_URL,
-                Constants.TWITTER_ACCESS_TOKEN_URL,
-                Constants.TWITTER_AUTHORIZE_URL);
 
         mProvider.setOAuth10a(true);
     }

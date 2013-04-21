@@ -48,4 +48,5 @@
     <string name="account_created_toast_format">Account created: %1$s</string>
     <string name="account_canceled_toast_format">Account canceled: %1$s</string>
     <string name="account_retry">Authentication failed. Retry by re-opening app.</string>
+    <string name="posted">Message posted</string>
 </resources>
