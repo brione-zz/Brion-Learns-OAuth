@@ -16,6 +16,7 @@
 package com.eyebrowssoftware.bloa.syncadapter;
 
 import java.io.IOException;
+import java.util.LinkedList;
 
 import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
@@ -26,8 +27,12 @@ import oauth.signpost.exception.OAuthMessageSignerException;
 
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,6 +46,7 @@ import android.content.ContentProviderClient;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SyncResult;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -65,10 +71,13 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     static final String TAG = "SyncAdapter";
 
+    private static final boolean NOTIFY_AUTH_FAILURE = true;
+    private static final String WHERE_STATUS = UserStatusRecord.IS_NEW + " ISNULL";
+    private static final String WHERE_POST = UserStatusRecord.IS_NEW + " NOTNULL";
+
     private HttpClient mClient = BloaApp.getHttpClient();
     private final TimelineSelector mTimelineSelector = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
     private OAuthConsumer mConsumer;
-    private static final boolean NOTIFY_AUTH_FAILURE = true;
 
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
@@ -91,6 +100,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 mConsumer.setTokenWithSecret(token, authtoken);
                 syncUserProfile(provider, syncResult);
                 syncUserTimeline(provider, syncResult);
+                postToUserTimeline(provider, syncResult);
             } catch (OperationCanceledException e) {
                 e.printStackTrace();
             } catch (AuthenticatorException e) {
@@ -112,7 +122,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             if (response != null) {
 
                 // Singleton: Delete any existing records for user
-                provider.delete(UserStatusRecords.CONTENT_URI, null, null);
+                provider.delete(UserStatusRecords.CONTENT_URI, WHERE_STATUS, null);
 
                 // Distinguish this as a User Status singleton, regardless of origin
                 jso = new JSONObject(response);
@@ -212,6 +222,53 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         } catch (OAuthCommunicationException e) {
             e.printStackTrace();
             syncResult.stats.numIoExceptions++;
+        }
+
+    }
+
+    private void postToUserTimeline(ContentProviderClient provider, SyncResult syncResult) {
+        Cursor c = null;
+        try {
+            // Look for new items
+            c = provider.query(UserStatusRecords.CONTENT_URI,
+                    Constants.USER_STATUS_PROJECTION, WHERE_POST, null, UserStatusRecord.DEFAULT_SORT_ORDER);
+            while (c.moveToNext()) {
+                String text = c.getString(Constants.IDX_USER_STATUS_USER_TEXT);
+                if (text != null && text.length() > 0) {
+                    HttpPost post = new HttpPost(Constants.STATUSES_URL_STRING);
+                    LinkedList<BasicNameValuePair> out = new LinkedList<BasicNameValuePair>();
+                    out.add(new BasicNameValuePair("status", text));
+                    post.setEntity(new UrlEncodedFormEntity(out, HTTP.UTF_8));
+                    // sign the request to authenticate
+                    mConsumer.sign(post);
+                    mClient.execute(post, new BasicResponseHandler());
+                }
+            }
+            c.close();
+            c = null;
+            provider.delete(UserStatusRecords.CONTENT_URI, WHERE_POST, null);
+        } catch (final IOException e) {
+            e.printStackTrace();
+            syncResult.stats.numIoExceptions++;
+        } catch (final ParseException e) {
+            e.printStackTrace();
+            syncResult.stats.numParseExceptions++;
+        } catch (RemoteException e) {
+            syncResult.stats.numIoExceptions++;
+            e.printStackTrace();
+        } catch (OAuthMessageSignerException e) {
+            e.printStackTrace();
+            syncResult.stats.numAuthExceptions++;
+        } catch (OAuthExpectationFailedException e) {
+            syncResult.stats.numAuthExceptions++;
+            e.printStackTrace();
+        } catch (OAuthCommunicationException e) {
+            e.printStackTrace();
+            syncResult.stats.numIoExceptions++;
+        } finally {
+            if (c != null) {
+                c.close();
+            }
         }
 
     }

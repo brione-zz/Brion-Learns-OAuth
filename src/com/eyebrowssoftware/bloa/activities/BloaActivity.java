@@ -16,26 +16,10 @@
 package com.eyebrowssoftware.bloa.activities;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.LinkedList;
 
 import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
-import oauth.signpost.exception.OAuthCommunicationException;
-import oauth.signpost.exception.OAuthExpectationFailedException;
-import oauth.signpost.exception.OAuthMessageSignerException;
-
-import org.apache.http.HttpStatus;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.HttpResponseException;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
-
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
@@ -43,9 +27,8 @@ import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.content.ContentResolver;
-import android.content.Context;
+import android.content.ContentValues;
 import android.database.Cursor;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
@@ -134,7 +117,12 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             if (postString.length() == 0) {
                 Toast.makeText(BloaActivity.this, getText(R.string.tweet_empty), Toast.LENGTH_SHORT).show();
             } else {
-                new PostTask(BloaActivity.this, mConsumer).execute(postString);
+                ContentValues values = new ContentValues();
+                values.put(UserStatusRecord.USER_TEXT, postString);
+                values.put(UserStatusRecord.IS_NEW, true);
+                values.put(UserStatusRecord.CREATED_DATE, System.currentTimeMillis());
+                Assert.assertNotNull(getContentResolver().insert(UserStatusRecords.CONTENT_URI, values));
+                mEditor.setText(null);
             }
         }
     }
@@ -165,56 +153,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             mCB.setChecked(false); // the oauth callback will set it to the proper state
         }
     }
-
-    //----------------------------
-    // This task posts a message to your message queue on the service.
-    static class PostTask extends AsyncTask<String, Void, Void> {
-
-        HttpClient mClient = BloaApp.getHttpClient();
-        OAuthConsumer mConsumer;
-        Context mContext;
-
-        public PostTask(Context context, OAuthConsumer consumer) {
-            mContext = context;
-            mConsumer = consumer;
-        }
-
-        @Override
-        protected Void doInBackground(String... params) {
-            try {
-
-                HttpPost post = new HttpPost(Constants.STATUSES_URL_STRING);
-                LinkedList<BasicNameValuePair> out = new LinkedList<BasicNameValuePair>();
-                out.add(new BasicNameValuePair("status", params[0]));
-                post.setEntity(new UrlEncodedFormEntity(out, HTTP.UTF_8));
-                // sign the request to authenticate
-                mConsumer.sign(post);
-                mClient.execute(post, new BasicResponseHandler());
-            } catch (HttpResponseException e) {
-                int status = e.getStatusCode();
-                if (status == HttpStatus.SC_UNAUTHORIZED) {
-                    AccountManager.get(mContext).invalidateAuthToken(Constants.ACCOUNT_TYPE, mConsumer.getConsumerSecret());
-                    e.printStackTrace();
-                } else {
-                    e.printStackTrace();
-                }
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            } catch (OAuthMessageSignerException e) {
-                e.printStackTrace();
-            } catch (OAuthExpectationFailedException e) {
-                e.printStackTrace();
-            } catch (OAuthCommunicationException e) {
-                e.printStackTrace();
-            } catch (ClientProtocolException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-    }
-
 
 
     @Override
