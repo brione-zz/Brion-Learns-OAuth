@@ -17,8 +17,7 @@ package com.eyebrowssoftware.bloa.data;
 
 import android.content.ContentResolver;
 import android.net.Uri;
-
-import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
+import android.provider.BaseColumns;
 
 /**
  * @author brionemde
@@ -47,12 +46,25 @@ public final class UserTimelineRecords {
      * @author brionemde
      *
      */
-    public static class UserTimelineRecord extends UserStatusRecord {
+    public static class UserTimelineRecord implements BaseColumns {
         /**
          * The MIME type of a {@link #CONTENT_URI} sub-directory of a single
          * note.
          */
         public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE
-                + "/vnd.com.eyebrowssoftware.bloa.user_status_record";
+                + "/vnd.com.eyebrowssoftware.bloa.user_timeline_record";
+
+        /**
+         * The default sort order for this table
+         */
+        public static final String DEFAULT_SORT_ORDER = UserTimelineRecord.CREATED_DATE + " DESC";
+
+        public static final String _ID = BaseColumns._ID;
+        public static final String RECORD_ID = "user_id";
+        public static final String USER_NAME = "user_name";
+        public static final String USER_TEXT = "user_text";
+        public static final String USER_CREATED_DATE = "user_created_date";
+        public static final String CREATED_DATE = "created_at";
+
     }
 }

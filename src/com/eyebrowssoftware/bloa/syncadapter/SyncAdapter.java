@@ -1,17 +1,17 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright 2013 - Brion Noble Emde
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package com.eyebrowssoftware.bloa.syncadapter;
 
@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
+import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
 import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
@@ -32,6 +33,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentValues;
@@ -44,8 +48,11 @@ import android.util.Log;
 
 import com.eyebrowssoftware.bloa.BloaApp;
 import com.eyebrowssoftware.bloa.Constants;
+import com.eyebrowssoftware.bloa.MyKeysProvider;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
+import com.eyebrowssoftware.bloa.data.UserTimelineRecords;
+import com.eyebrowssoftware.bloa.data.UserTimelineRecords.UserTimelineRecord;
 
 /**
  * SyncAdapter implementation for syncing sample SyncAdapter contacts to the
@@ -58,22 +65,38 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     static final String TAG = "SyncAdapter";
 
-    private OAuthConsumer mConsumer;
-    private HttpClient mClient;
+    private HttpClient mClient = BloaApp.getHttpClient();
     private final TimelineSelector mTimelineSelector = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
+    private final MyKeysProvider sKeysProvider = new MyKeysProvider();
+    private final OAuthConsumer mConsumer = new CommonsHttpOAuthConsumer(sKeysProvider.getKey1(), sKeysProvider.getKey2());
+    private static final boolean NOTIFY_AUTH_FAILURE = true;
 
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
-
-        Log.i(TAG, "Sync adapter constructor");
-        mConsumer = BloaApp.getOAuthConsumer();
-        mClient = BloaApp.getHttpClient();
+        Log.d(TAG, "Sync adapter constructor");
     }
 
     @Override
     public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
-        syncUserProfile(provider, syncResult);
-        syncUserTimeline(provider, syncResult);
+        // Use the account manager to request the AuthToken we'll need
+        // to talk to our sample server.  If we don't have an AuthToken
+        // yet, this could involve a round-trip to the server to request
+        // and AuthToken.
+            AccountManager am = AccountManager.get(this.getContext());
+            String authtoken;
+            try {
+                authtoken = am.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, NOTIFY_AUTH_FAILURE);
+                String token = am.getUserData(account, Constants.PARAM_USERNAME);
+                mConsumer.setTokenWithSecret(token, authtoken);
+                syncUserProfile(provider, syncResult);
+                syncUserTimeline(provider, syncResult);
+            } catch (OperationCanceledException e) {
+                e.printStackTrace();
+            } catch (AuthenticatorException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
     }
 
     private void syncUserProfile(ContentProviderClient provider, SyncResult syncResult) {
@@ -88,7 +111,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             if (response != null) {
 
                 // Singleton: Delete any existing records for user
-                provider.delete(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_QUERY_WHERE, null);
+                provider.delete(UserStatusRecords.CONTENT_URI, null, null);
 
                 // Distinguish this as a User Status singleton, regardless of origin
                 jso = new JSONObject(response);
@@ -98,7 +121,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 values.put(UserStatusRecord.USER_CREATED_DATE, jso.getString("created_at"));
                 JSONObject status = jso.getJSONObject("status");
                 values.put(UserStatusRecord.USER_TEXT, status.getString("text"));
-                values.put(UserStatusRecord.LATEST_STATUS, "true");
 
                 Assert.assertNotNull(provider.insert(UserStatusRecords.CONTENT_URI, values));
             } else {
@@ -154,9 +176,15 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 ContentValues[] values = new ContentValues[array.length()];
                 for(int i = 0; i < array.length(); ++i) {
                     JSONObject status = array.getJSONObject(i);
-                    values[i] = parseTimelineJSONObject(status);
+                    values[i] = new ContentValues();
+                    JSONObject user = status.getJSONObject("user");
+                    values[i].put(UserTimelineRecord.USER_NAME, user.getString("name"));
+                    values[i].put(UserTimelineRecord.RECORD_ID, user.getInt("id_str"));
+                    values[i].put(UserTimelineRecord.USER_CREATED_DATE, status.getString("created_at"));
+                    values[i].put(UserTimelineRecord.USER_TEXT, status.getString("text"));
                 }
-                provider.bulkInsert(UserStatusRecords.CONTENT_URI, values);
+                Assert.assertEquals(array.length(), provider.bulkInsert(UserTimelineRecords.CONTENT_URI, values));
+                Log.d(TAG, String.format("Inserted %1$d items into database", array.length()));
             } else {
                 Log.e(TAG, "GetTimelineTask: null response text");
                 throw new IllegalStateException("Expected some text in the Http response");
@@ -218,17 +246,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             page = pg;
         }
     }
-
-    private ContentValues parseTimelineJSONObject(JSONObject object) throws JSONException {
-        ContentValues values = new ContentValues();
-        JSONObject user = object.getJSONObject("user");
-        values.put(UserStatusRecord.USER_NAME, user.getString("name"));
-        values.put(UserStatusRecord.RECORD_ID, user.getInt("id_str"));
-        values.put(UserStatusRecord.USER_CREATED_DATE, object.getString("created_at"));
-        values.put(UserStatusRecord.USER_TEXT, object.getString("text"));
-        return values;
-    }
-
 
 
 }

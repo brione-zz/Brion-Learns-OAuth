@@ -18,6 +18,7 @@ package com.eyebrowssoftware.bloa;
 import android.net.Uri;
 
 import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
+import com.eyebrowssoftware.bloa.data.UserTimelineRecords.UserTimelineRecord;
 
 public class Constants {
 
@@ -47,17 +48,13 @@ public class Constants {
     public static final int BLOA_LOADER_ID = 1;
     public static final int LIST_LOADER_ID = 2;
 
-    public static final String USER_STATUS_QUERY_WHERE = UserStatusRecord.LATEST_STATUS + "=" + UserStatusRecord.LATEST_STATUS_USER;
-    public static final String USER_TIMELINE_QUERY_WHERE = UserStatusRecord.LATEST_STATUS + " ISNULL";
-
     public static final String[] USER_STATUS_PROJECTION = {
         UserStatusRecord.USER_NAME,
         UserStatusRecord.USER_TEXT,
         UserStatusRecord.RECORD_ID,
         UserStatusRecord.USER_CREATED_DATE,
         UserStatusRecord._ID,
-        UserStatusRecord.CREATED_DATE,
-        UserStatusRecord.LATEST_STATUS
+        UserStatusRecord.CREATED_DATE
     };
 
     // Use these so you don't have to look up the columns all the time
@@ -67,7 +64,23 @@ public class Constants {
     public static final int IDX_USER_STATUS_USER_CREATED_DATE = 3;
     public static final int IDX_USER_STATUS_ID = 4;
     public static final int IDX_USER_STATUS_CREATED_DATE = 5;
-    public static final int IDX_USER_STATUS_LATEST_STATUS = 6;
+
+    public static final String[] USER_TIMELINE_PROJECTION = {
+        UserTimelineRecord.USER_NAME,
+        UserTimelineRecord.USER_TEXT,
+        UserTimelineRecord.RECORD_ID,
+        UserTimelineRecord.USER_CREATED_DATE,
+        UserTimelineRecord._ID,
+        UserTimelineRecord.CREATED_DATE
+    };
+
+    // Use these so you don't have to look up the columns all the time
+    public static final int IDX_USER_TIMELINE_USER_NAME = 0;
+    public static final int IDX_USER_TIMELINE_USER_TEXT = 1;
+    public static final int IDX_USER_TIMELINE_USER_ID = 2;
+    public static final int IDX_USER_TIMELINE_USER_CREATED_DATE = 3;
+    public static final int IDX_USER_TIMELINE_ID = 4;
+    public static final int IDX_USER_TIMELINE_CREATED_DATE = 5;
 
     public static final int HTTP_REQUEST_TIMEOUT_MS = 30 * 1000;
 
