@@ -215,7 +215,8 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
             specific.putString(Constants.PARAM_PASSWORD, null);
             AccountManager.get(this).addAccountExplicitly(account, secret, specific);
             // Set contacts sync for this account.
-            ContentResolver.setSyncAutomatically(account, BloaProvider.AUTHORITY, true);
+            ContentResolver.setIsSyncable(account, BloaProvider.AUTHORITY, 1);
+            ContentResolver.setSyncAutomatically(account, BloaProvider.AUTHORITY, false);
         } else {
             AccountManager.get(this).setPassword(account, null);
         }

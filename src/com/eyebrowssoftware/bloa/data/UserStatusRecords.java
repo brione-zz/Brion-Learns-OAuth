@@ -57,7 +57,7 @@ public final class UserStatusRecords {
         /**
          * The default sort order for this table
          */
-        public static final String DEFAULT_SORT_ORDER = UserStatusRecord.CREATED_DATE + " DESC";
+        public static final String DEFAULT_SORT_ORDER = UserStatusRecord.CREATED_DATE + " ASC";
 
         public static final String _ID = BaseColumns._ID;
         public static final String RECORD_ID = "user_id";
