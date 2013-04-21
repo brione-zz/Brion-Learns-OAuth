@@ -30,11 +30,26 @@ public class AuthenticationService extends Service {
     private static final String TAG = "AuthenticationService";
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.d(TAG, "onCreate() called");
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(TAG, "onDestroy() called");
+    }
+
+    @Override
     public IBinder onBind(Intent intent) {
-        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-            Log.v(TAG, "getBinder()...  returning the Authenticator binder for intent "
-                    + intent);
-        }
+        Log.d(TAG, "getBinder()...  returning the Authenticator binder for intent " + intent);
         return new BloaAuthenticator(this).getIBinder();
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        Log.d(TAG, "onUnbind() called");
+        return super.onUnbind(intent);
     }
 }
