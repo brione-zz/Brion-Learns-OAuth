@@ -92,7 +92,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
     private Handler mHandler = new Handler();
 
-    private Boolean mIsLoggedIn;
+    private Boolean mIsLoggedIn = false;
 
     // You'll need to create this or change the name of DefaultKeysProvider
     IKeysProvider mKeysProvider = new MyKeysProvider();
@@ -124,6 +124,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         Assert.assertTrue(accounts.length < 2); // There can only be one: Twitter
         if (accounts.length > 0) {
             mAccount = accounts[0];
+        } else {
+            mAm.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, mHandler);
         }
     }
 
@@ -132,24 +134,15 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         super.onResume();
         if (mAccount != null) {
             // Assume we're logged in, for now, so we can move some code here
-            mCB.setChecked(mIsLoggedIn);
-            mButton.setEnabled(mIsLoggedIn);
-            mEditor.setEnabled(mIsLoggedIn);
-            if (mIsLoggedIn) {
-                TimelineSelector ss = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
-                new GetTimelineTask().execute(ss);
-            } else {
-                deleteStatusRecord();
-                deleteTimelineRecords();
-            }
+            setLoggedIn(mIsLoggedIn);
          }
     }
     private int deleteTimelineRecords() {
         return mCR.delete(UserStatusRecords.CONTENT_URI, Constants.USER_TIMELINE_QUERY_WHERE, null);
     }
 
-    private void deleteStatusRecord() {
-        mCR.delete(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_QUERY_WHERE, null);
+    private int deleteStatusRecord() {
+        return mCR.delete(UserStatusRecords.CONTENT_URI, Constants.USER_STATUS_QUERY_WHERE, null);
     }
 
     private ContentValues parseTimelineJSONObject(JSONObject object) throws JSONException {
@@ -174,15 +167,20 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
     }
 
-    private void setLoggedOut() {
-        // XXX: Fix thix
-        // mAm.invalidateAuthToken(Constants.ACCOUNT_TYPE, null);
-        deleteStatusRecord();
-        deleteTimelineRecords();
-        mButton.setEnabled(false);
-        mEditor.setEnabled(false);
-        mEditor.setText(null);
-        updateUI(null, null);
+    private void setLoggedIn(boolean loggedIn) {
+        mCB.setChecked(loggedIn);
+        mButton.setEnabled(loggedIn);
+        mEditor.setEnabled(loggedIn);
+        if (loggedIn) {
+            TimelineSelector ss = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
+            new GetTimelineTask().execute(ss);
+        } else {
+            mEditor.setText(null);
+            mUserTextView.setText(null);
+            this.mLastTweetTextView.setText(null);
+            deleteStatusRecord();
+            deleteTimelineRecords();
+        }
 
     }
 
@@ -197,7 +195,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                     mAm.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, mHandler);
                 }
             } else {
-                setLoggedOut();
+                setLoggedIn(false);
             }
             mCB.setChecked(false); // the oauth callback will set it to the proper state
         }
@@ -377,9 +375,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                     ContentValues[] values = new ContentValues[array.length()];
                     for(int i = 0; i < array.length(); ++i) {
                         JSONObject status = array.getJSONObject(i);
-                        if (Log.isLoggable(TAG, Log.VERBOSE)) {
-                            Log.v(TAG, status.toString());
-                        }
                         values[i] = parseTimelineJSONObject(status);
                     }
                     mCR.bulkInsert(UserStatusRecords.CONTENT_URI, values);
@@ -459,14 +454,30 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         Log.d(TAG, "Got a future!");
         String token = null;
         String secret = null;
+        String type = null;
         try {
             Bundle authResult = futureResult.getResult();
+            type = authResult.getString(AccountManager.KEY_ACCOUNT_TYPE);
+            Assert.assertNotNull(type);
+            Assert.assertEquals(Constants.ACCOUNT_TYPE, type);
+
             token = authResult.getString(AccountManager.KEY_ACCOUNT_NAME);
+            Assert.assertNotNull(token);
+            Log.d(TAG, "token is" + token);
+
             secret = authResult.getString(AccountManager.KEY_AUTHTOKEN);
-            mConsumer.setTokenWithSecret(token, secret);
-            new GetCredentialsTask().execute();
+            if (secret != null) {
+                Log.d(TAG, "secret is" + secret);
+                mConsumer.setTokenWithSecret(token, secret);
+                new GetCredentialsTask().execute();
+            } else {
+                // TODO AccountManager.get(BloaActivity.this).getAuthToken(account, authTokenType, notifyAuthFailure, callback, handler)
+                Log.d(TAG, "No secret in future result");
+            }
         } catch (OperationCanceledException e) {
-            e.printStackTrace();
+            setLoggedIn(false);
+            String toast = String.format(getString(R.string.account_canceled_toast_format), Constants.ACCOUNT_TYPE);
+            Toast.makeText(this, toast, Toast.LENGTH_LONG).show();
         } catch (AuthenticatorException e) {
             e.printStackTrace();
         } catch (IOException e) {

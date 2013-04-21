@@ -25,7 +25,6 @@ import oauth.signpost.exception.OAuthMessageSignerException;
 import oauth.signpost.exception.OAuthNotAuthorizedException;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorActivity;
-import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.content.Intent;
@@ -34,40 +33,39 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.util.Log;
+import android.view.Window;
+import android.widget.Toast;
 
 import com.eyebrowssoftware.bloa.BloaApp;
 import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.R;
-import com.eyebrowssoftware.bloa.data.BloaProvider;
 
 public class OAuthActivity extends AccountAuthenticatorActivity {
     static final String TAG = "OAuthActivity";
 
-   private  OAuthProvider mProvider;
-   private  OAuthConsumer mConsumer;
-   private  Intent mIntent;
-   private AccountManager mAccountManager;
-   private Boolean mConfirmCredentials = false;
-   private Boolean mRequestNewAccount = false;
-   private String mRequestToken;
-   private String mRequestSecret;
-   private AccountAuthenticatorResponse mResponse;
-
+    private  OAuthProvider mProvider;
+    private  OAuthConsumer mConsumer;
+    private Boolean mConfirmCredentials = false;
+    private Boolean mRequestNewAccount = false;
 
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
 
-        setContentView(R.layout.progress_view);
-
-        mAccountManager = AccountManager.get(this);
-
         BloaApp app = (BloaApp) getApplication();
         mProvider = app.getOAuthProvider();
         mConsumer = app.getOAuthConsumer();
 
-        mIntent = this.getIntent();
-        mResponse = mIntent.getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
+        Intent mIntent = this.getIntent();
+        String token = mIntent.getStringExtra(Constants.PARAM_USERNAME);
+        mRequestNewAccount = token == null;
+        mConfirmCredentials = mIntent.getBooleanExtra(Constants.PARAM_CONFIRM_CREDENTIALS, false);
+
+        Log.i(TAG, "    request new: " + mRequestNewAccount);
+        requestWindowFeature(Window.FEATURE_LEFT_ICON);
+
+        setContentView(R.layout.progress_view);
+
         (new RetrieveRequestTokenTask()).execute(new Void[0]);
     }
 
@@ -107,9 +105,6 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
 
-        if (Log.isLoggable(TAG, Log.DEBUG)) {
-            Log.d(TAG, "onNewIntent() called");
-        }
         Uri uri = intent.getData();
         Assert.assertNotNull(uri);
         String otoken = uri.getQueryParameter(OAuth.OAUTH_TOKEN);
@@ -123,6 +118,8 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
             String verifier = uri.getQueryParameter(OAuth.OAUTH_VERIFIER);
             (new RetrieveAccessTokenTask()).execute(verifier);
         } else {
+            String denied = uri.getQueryParameter("denied");
+            Log.i(TAG, String.format("Access denied or canceled. Token returned is %1$s", denied));
             finish();
         }
     }
@@ -152,15 +149,23 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         protected void onPostExecute(OAuthConsumer consumer) {
             super.onPostExecute(consumer);
 
-            OAuthActivity.this.finish();
             if (consumer != null) {
                 onAuthenticationResult(consumer.getToken(), consumer.getTokenSecret());
             } else {
-                onAuthenticationCanceled();
+                Toast.makeText(OAuthActivity.this, R.string.account_retry, Toast.LENGTH_LONG).show();
+                finish();
             }
         }
     }
 
+
+    private void onAuthenticationResult(String token, String secret) {
+        if (!mConfirmCredentials) {
+            finishLogin(token, secret);
+        } else {
+            finishConfirmCredentials(token, secret);
+        }
+    }
 
     /**
      * Called when response is received from the server for confirm credentials
@@ -171,22 +176,10 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
      */
     private void finishConfirmCredentials(String token, String secret) {
         Log.i(TAG, "finishConfirmCredentials()");
-        final Account account = new Account(mConsumer.getToken(), Constants.ACCOUNT_TYPE);
-        if (mRequestNewAccount) {
-            mAccountManager.addAccountExplicitly(account, mConsumer.getTokenSecret(), null);
-            // Set contacts sync for this account.
-            ContentResolver.setSyncAutomatically(account, BloaProvider.AUTHORITY, true);
-        } else {
-            mAccountManager.setPassword(account, mConsumer.getTokenSecret());
-        }
-        Bundle result = new Bundle();
-        result.putString(Constants.PARAM_USERNAME, mConsumer.getToken());
-        result.putString(Constants.PARAM_PASSWORD, mConsumer.getTokenSecret());
-        OAuthActivity.this.setAccountAuthenticatorResult(result);
+        final Account account = new Account(token, Constants.ACCOUNT_TYPE);
+        AccountManager.get(this).setPassword(account, secret);
         final Intent intent = new Intent();
-        mResponse.onResult(result);
-        intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, mConsumer.getToken());
-        intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
+        intent.putExtra(AccountManager.KEY_BOOLEAN_RESULT, true);
         setAccountAuthenticatorResult(intent.getExtras());
         setResult(RESULT_OK, intent);
         finish();
@@ -208,11 +201,11 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         Log.i(TAG, "finishLogin()");
         final Account account = new Account(token, Constants.ACCOUNT_TYPE);
         if (mRequestNewAccount) {
-            mAccountManager.addAccountExplicitly(account, secret, null);
+            AccountManager.get(this).addAccountExplicitly(account, secret, null);
             // Set contacts sync for this account.
             ContentResolver.setSyncAutomatically(account, ContactsContract.AUTHORITY, true);
         } else {
-            mAccountManager.setPassword(account, secret);
+            AccountManager.get(this).setPassword(account, secret);
         }
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, token);
@@ -221,19 +214,5 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         setAccountAuthenticatorResult(intent.getExtras());
         setResult(RESULT_OK, intent);
         finish();
-    }
-
-    private void onAuthenticationResult(String token, String secret) {
-        if (!mConfirmCredentials) {
-            finishLogin(token, secret);
-        } else {
-            finishConfirmCredentials(token, secret);
-        }
-    }
-
-    private void onAuthenticationCanceled() {
-        final Intent result = new Intent();
-        // TODO fix this
-
     }
 }
