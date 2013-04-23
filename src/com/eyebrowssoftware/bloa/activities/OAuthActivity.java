@@ -73,7 +73,7 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         Log.i(TAG, "    request new: " + mRequestNewAccount);
         requestWindowFeature(Window.FEATURE_LEFT_ICON);
 
-        setContentView(R.layout.progress_view);
+        setContentView(R.layout.oauth_activity);
 
         (new RetrieveRequestTokenTask()).execute(new Void[0]);
     }
@@ -104,7 +104,9 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         protected void onPostExecute(String url) {
             super.onPostExecute(url);
             if (url != null) {
-                OAuthActivity.this.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                Intent intent = new Intent(OAuthActivity.this, MyWebActivity.class);
+                intent.setData(Uri.parse(url));
+                OAuthActivity.this.startActivity(intent);
             }
         }
     }
