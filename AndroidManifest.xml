@@ -88,6 +88,6 @@
                 <data android:scheme="bloa-app" android:host="twitt" />
             </intent-filter>
         </activity>
-        <activity android:name=".activities.MyWebActivity" android:theme="@android:style/Theme.Dialog"></activity>
+        <activity android:name=".activities.MyWebActivity"></activity>
     </application>
 </manifest>
