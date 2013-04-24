@@ -52,6 +52,7 @@ import com.eyebrowssoftware.bloa.MyKeysProvider;
 import com.eyebrowssoftware.bloa.R;
 import com.eyebrowssoftware.bloa.data.BloaProvider;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords;
+import com.eyebrowssoftware.bloa.data.UserTimelineRecords;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
 
 public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cursor>, AccountManagerCallback<Bundle> {
@@ -65,7 +66,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
     private final IKeysProvider keysProvider = BloaApp.getKeysProvider();
     private final OAuthConsumer mConsumer =  new CommonsHttpOAuthConsumer(keysProvider.getKey1(), keysProvider.getKey2());
-    private Account mAccount;
 
     // You'll need to create this or change the name of DefaultKeysProvider
     IKeysProvider mKeysProvider = new MyKeysProvider();
@@ -78,6 +78,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         setContentView(R.layout.bloa_activity);
 
         mCB = (CheckBox) this.findViewById(R.id.enable);
+        mCB.setChecked(false);
         mCB.setOnClickListener(new LoginCheckBoxClickedListener());
 
         mEditor = (EditText) this.findViewById(R.id.editor);
@@ -88,11 +89,11 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         mUserTextView = (TextView) this.findViewById(R.id.user);
         mLastTweetTextView = (TextView) this.findViewById(R.id.last);
 
-        mAccount = getAccount();
-        if (mAccount == null) {
+        Account account = getAccount();
+        if (account == null) {
             AccountManager.get(this).addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, null);
         } else {
-            AccountManager.get(this).getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
+            AccountManager.get(BloaActivity.this).getAuthToken(account, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
         }
         // Set up our cursor loader. It manages the cursors from now on
         getSupportLoaderManager().initLoader(Constants.BLOA_LOADER_ID, null, this);
@@ -105,9 +106,9 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
     private Account getAccount() {
         AccountManager am = AccountManager.get(this);
-        Account[] mAccounts = am.getAccountsByType(Constants.ACCOUNT_TYPE);
-        Assert.assertTrue(mAccounts.length < 2); // There can only be one: Twitter
-        return (mAccounts.length > 0) ? mAccounts[0] : null;
+        Account[] accounts = am.getAccountsByType(Constants.ACCOUNT_TYPE);
+        Assert.assertTrue(accounts.length < 2); // There can only be one: Twitter
+        return (accounts.length > 0) ? accounts[0] : null;
     }
 
     class PostButtonClickListener implements OnClickListener {
@@ -134,23 +135,21 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         mEditor.setText(null);
         mUserTextView.setText(null);
         this.mLastTweetTextView.setText(null);
+        if (! loggedIn) {
+            ContentResolver cr = this.getContentResolver();
+            cr.delete(UserTimelineRecords.CONTENT_URI, null, null);
+            cr.delete(UserStatusRecords.CONTENT_URI, null, null);
+        }
+        ((FragmentActivity) this).invalidateOptionsMenu();
     }
 
     class LoginCheckBoxClickedListener implements OnClickListener {
 
-        @SuppressWarnings("deprecation")
         @Override
         public void onClick(View v) {
-            if(mCB.isChecked()) {
-                if (mAccount != null) {
-                    AccountManager.get(BloaActivity.this).getAuthToken(mAccount, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
-                } else {
-                    throw new IllegalStateException("You somehow got here without having an account. That button should be inactive right now");
-                }
-            } else {
+            if(!mCB.isChecked()) {
                 setLoggedIn(false);
             }
-            mCB.setChecked(false); // the oauth callback will set it to the proper state
         }
     }
 
@@ -198,7 +197,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         MenuItem item = menu.findItem(R.id.refresh_timeline);
-        item.setEnabled(mAccount != null);
+        item.setEnabled(getAccount() != null);
         return super.onPrepareOptionsMenu(menu);
     }
 
@@ -206,37 +205,53 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
         case R.id.refresh_timeline:
-            ContentResolver.requestSync(mAccount, BloaProvider.AUTHORITY, new Bundle());
+            ContentResolver.requestSync(getAccount(), BloaProvider.AUTHORITY, new Bundle());
             return true;
         default:
             return super.onOptionsItemSelected(item);
         }
     }
 
+    /**
+     * This is theAccountManagerCallback. The future result is ready because we waited for it.
+     */
+    @SuppressWarnings("deprecation")
     @Override
     public void run(AccountManagerFuture<Bundle> futureResult) {
         Log.d(TAG, "Got a future!");
         String token = null;
         String secret = null;
         String type = null;
+        if (futureResult.isCancelled()) {
+            Log.d(TAG, "Login was canceled");
+            return;
+        }
         try {
+            // We should have an account now
+            Account account = getAccount();
+            Assert.assertNotNull(account);
+
+            // We're doing this because we need the authtoken when that gets delivered.
+            // This call will block until the future is ready. It's ready now
             Bundle authResult = futureResult.getResult();
 
             type = authResult.getString(AccountManager.KEY_ACCOUNT_TYPE);
             Assert.assertEquals(Constants.ACCOUNT_TYPE, type);
 
             token = authResult.getString(AccountManager.KEY_ACCOUNT_NAME);
-            Assert.assertNotNull(token);
+            Assert.assertNotNull(token); // Sanity check
             Log.d(TAG, "token is: " + token);
-            if (mAccount == null) {
-                mAccount = getAccount();
-            }
+
+            // This only gets delivered when on the getAuthtoken result
             secret = authResult.getString(AccountManager.KEY_AUTHTOKEN);
             if (secret != null) {
                 Log.d(TAG, "secret is: " + secret);
+                // This is the key here
                 mConsumer.setTokenWithSecret(token, secret);
+            } else {
+                AccountManager.get(BloaActivity.this).getAuthToken(account, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
             }
-            setLoggedIn(secret != null);
+            setLoggedIn(mConsumer.getToken() != null && mConsumer.getTokenSecret() != null);
         } catch (OperationCanceledException e) {
             e.printStackTrace();
         } catch (AuthenticatorException e) {
