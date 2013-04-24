@@ -77,7 +77,6 @@
             android:name=".activities.OAuthActivity"
             android:launchMode="singleTask"
             android:theme="@android:style/Theme.Dialog"
-            android:excludeFromRecents="true"
             android:configChanges="orientation"
          >
             <!-- TODO: Put your callback components into the data element below -->
@@ -88,6 +87,8 @@
                 <data android:scheme="bloa-app" android:host="twitt" />
             </intent-filter>
         </activity>
-        <activity android:name=".activities.MyWebActivity" />
+        <activity android:name=".activities.MyWebActivity"
+            android:excludeFromRecents="true"
+        />
     </application>
 </manifest>
