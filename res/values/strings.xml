@@ -49,4 +49,9 @@
     <string name="account_canceled_toast_format">Account canceled: %1$s</string>
     <string name="account_retry">Authentication failed. Retry by re-opening app.</string>
     <string name="posted">Message posted</string>
+
+    <!-- Oauth Activity User Name -->
+    <string name="user_name_hint">User</string>
+    <string name="go_button_text">OK</string>
+    <string name="no_custom_name">No custom account name for you %1$s</string>
 </resources>

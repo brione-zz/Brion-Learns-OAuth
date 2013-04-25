@@ -18,11 +18,33 @@
     android:layout_height="match_parent"
 >
     <ProgressBar
-        android:id="@+id/progressBar1"
+        android:id="@+id/progress_bar"
         style="?android:attr/progressBarStyleLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:visibility="gone"
     />
-
+    <LinearLayout
+        android:id="@+id/user_name_form"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+    >
+        <EditText
+            android:id="@+id/user_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textIsSelectable="true"
+            android:inputType="text"
+            android:hint="@string/user_name_hint"
+        />
+        <Button
+            android:id="@+id/go_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/go_button_text"
+        />
+    </LinearLayout>
 </merge>
