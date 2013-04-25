@@ -34,7 +34,11 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.Window;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.eyebrowssoftware.bloa.BloaApp;
@@ -48,12 +52,35 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
 
     private  OAuthProvider mProvider;
     private  OAuthConsumer mConsumer;
+
     private Boolean mConfirmCredentials = false;
     private Boolean mRequestNewAccount = false;
+
+    private View mUserNameForm;
+    private EditText mUserNameEditText;
+    private Button mGoButton;
+
 
     @Override
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
+
+        requestWindowFeature(Window.FEATURE_LEFT_ICON);
+
+        setContentView(R.layout.oauth_activity);
+
+        mUserNameForm = this.findViewById(R.id.user_name_form);
+        mUserNameEditText = (EditText) mUserNameForm.findViewById(R.id.user_name);
+        mGoButton = (Button) mUserNameForm.findViewById(R.id.go_button);
+        mGoButton.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                mUserNameForm.setVisibility(View.GONE);
+                (new RetrieveRequestTokenTask()).execute(new Void[0]);
+            }
+
+        });
 
         mProvider = new CommonsHttpOAuthProvider(
                 Constants.TWITTER_REQUEST_TOKEN_URL,
@@ -69,13 +96,8 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
         String token = mIntent.getStringExtra(Constants.PARAM_USERNAME);
         mRequestNewAccount = token == null;
         mConfirmCredentials = mIntent.getBooleanExtra(Constants.PARAM_CONFIRM_CREDENTIALS, false);
-
         Log.i(TAG, "    request new: " + mRequestNewAccount);
-        requestWindowFeature(Window.FEATURE_LEFT_ICON);
-
-        setContentView(R.layout.oauth_activity);
-
-        (new RetrieveRequestTokenTask()).execute(new Void[0]);
+        Log.i(TAG, "    request credentials: " + mConfirmCredentials);
     }
 
     // This is new and required - we can't be decoding the tokens on the UI thread anymore
@@ -210,17 +232,22 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
     private void finishLogin(String token, String secret) {
 
         Log.i(TAG, "finishLogin()");
+        String user = mUserNameEditText.getText().toString();
+        if (user == null || user.isEmpty()) {
+            user = mUserNameEditText.getHint().toString();
+        }
+        String msg = String.format(this.getString(R.string.no_custom_name), user);
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
         final Account account = new Account(token, Constants.ACCOUNT_TYPE);
         if (mRequestNewAccount) {
             Bundle specific = new Bundle();
             specific.putString(Constants.PARAM_USERNAME, token);
-            specific.putString(Constants.PARAM_PASSWORD, null);
+            specific.putString(Constants.PARAM_PASSWORD, secret);
             AccountManager.get(this).addAccountExplicitly(account, secret, specific);
             // Set contacts sync for this account.
             ContentResolver.setIsSyncable(account, BloaProvider.AUTHORITY, 1);
             ContentResolver.setSyncAutomatically(account, BloaProvider.AUTHORITY, false);
-        } else {
-            AccountManager.get(this).setPassword(account, null);
+            ContentResolver.addPeriodicSync(account, BloaProvider.AUTHORITY, specific, 120);
         }
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, token);

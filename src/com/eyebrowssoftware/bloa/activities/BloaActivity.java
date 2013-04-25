@@ -26,8 +26,10 @@ import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
@@ -52,8 +54,8 @@ import com.eyebrowssoftware.bloa.MyKeysProvider;
 import com.eyebrowssoftware.bloa.R;
 import com.eyebrowssoftware.bloa.data.BloaProvider;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords;
-import com.eyebrowssoftware.bloa.data.UserTimelineRecords;
 import com.eyebrowssoftware.bloa.data.UserStatusRecords.UserStatusRecord;
+import com.eyebrowssoftware.bloa.data.UserTimelineRecords;
 
 public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cursor>, AccountManagerCallback<Bundle> {
     public static final String TAG = "BloaActivity";
@@ -70,7 +72,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     // You'll need to create this or change the name of DefaultKeysProvider
     IKeysProvider mKeysProvider = new MyKeysProvider();
 
-    @SuppressWarnings("deprecation")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -102,6 +103,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     @Override
     public void onResume() {
         super.onResume();
+        setUIState();
     }
 
     private Account getAccount() {
@@ -128,7 +130,13 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
     }
 
-    private void setLoggedIn(boolean loggedIn) {
+    private boolean isLoggedIn() {
+        return mConsumer.getToken() != null && mConsumer.getTokenSecret() != null;
+    }
+
+    @SuppressLint("NewApi")
+    private void setUIState() {
+        boolean loggedIn = isLoggedIn();
         mCB.setChecked(loggedIn);
         mButton.setEnabled(loggedIn);
         mEditor.setEnabled(loggedIn);
@@ -147,8 +155,10 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
         @Override
         public void onClick(View v) {
-            if(!mCB.isChecked()) {
-                setLoggedIn(false);
+            if(mCB.isChecked()) {
+                // TODO: what does it mean to log in?
+            } else {
+                // TODO: what does it mean to log out?
             }
         }
     }
@@ -218,6 +228,8 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     @SuppressWarnings("deprecation")
     @Override
     public void run(AccountManagerFuture<Bundle> futureResult) {
+
+        AccountManager am = AccountManager.get(this);
         Log.d(TAG, "Got a future!");
         String token = null;
         String secret = null;
@@ -225,25 +237,16 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         if (futureResult.isCancelled()) {
             Log.d(TAG, "Login was canceled");
             return;
-        }
-        try {
+        } else {
             // We should have an account now
             Account account = getAccount();
             Assert.assertNotNull(account);
 
             // We're doing this because we need the authtoken when that gets delivered.
             // This call will block until the future is ready. It's ready now
-            Bundle authResult = futureResult.getResult();
+            token = am.getUserData(account, Constants.PARAM_USERNAME);
+            secret = am.getUserData(account, Constants.PARAM_PASSWORD);
 
-            type = authResult.getString(AccountManager.KEY_ACCOUNT_TYPE);
-            Assert.assertEquals(Constants.ACCOUNT_TYPE, type);
-
-            token = authResult.getString(AccountManager.KEY_ACCOUNT_NAME);
-            Assert.assertNotNull(token); // Sanity check
-            Log.d(TAG, "token is: " + token);
-
-            // This only gets delivered when on the getAuthtoken result
-            secret = authResult.getString(AccountManager.KEY_AUTHTOKEN);
             if (secret != null) {
                 Log.d(TAG, "secret is: " + secret);
                 // This is the key here
@@ -251,13 +254,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             } else {
                 AccountManager.get(BloaActivity.this).getAuthToken(account, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
             }
-            setLoggedIn(mConsumer.getToken() != null && mConsumer.getTokenSecret() != null);
-        } catch (OperationCanceledException e) {
-            e.printStackTrace();
-        } catch (AuthenticatorException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            setUIState();
         }
     }
 }

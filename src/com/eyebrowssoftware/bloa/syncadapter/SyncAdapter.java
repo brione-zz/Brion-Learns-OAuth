@@ -95,9 +95,15 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             AccountManager am = AccountManager.get(this.getContext());
             String authtoken;
             try {
+                syncResult.clear();
                 authtoken = am.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, NOTIFY_AUTH_FAILURE);
+                if (authtoken == null) {
+                    syncResult.stats.numAuthExceptions++;
+                    throw new AuthenticatorException("No authtoken returned in sync adapter");
+                }
                 String token = am.getUserData(account, Constants.PARAM_USERNAME);
-                mConsumer.setTokenWithSecret(token, authtoken);
+                String secret = am.getUserData(account, Constants.PARAM_PASSWORD);
+                mConsumer.setTokenWithSecret(token, secret);
                 syncUserProfile(provider, syncResult);
                 syncUserTimeline(provider, syncResult);
                 postToUserTimeline(provider, syncResult);
