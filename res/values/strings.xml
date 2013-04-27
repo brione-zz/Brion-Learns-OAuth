@@ -54,4 +54,22 @@
     <string name="user_name_hint">User</string>
     <string name="go_button_text">OK</string>
     <string name="no_custom_name">No custom account name for you %1$s</string>
+
+    <!-- Sync Preferences -->
+    <string name="pref_syncInterval">Sync Interval</string>
+    <string name="pref_syncInterval_1">1 minute</string>
+    <string name="pref_syncInterval_2">2 minutes</string>
+    <string name="pref_syncInterval_5">5 minutes</string>
+    <string-array name="pref_syncIntervalNames">
+        <item>@string/pref_syncInterval_1</item>
+        <item>@string/pref_syncInterval_2</item>
+        <item>@string/pref_syncInterval_5</item>
+    </string-array>
+    <string name="pref_syncIntervalDefault">@string/pref_syncInterval_2</string>
+    <integer-array name="pref_syncIntervalValues">
+        <item>60</item>
+        <item>120</item>
+        <item>300</item>
+    </integer-array>
+
 </resources>

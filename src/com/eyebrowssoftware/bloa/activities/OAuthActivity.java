@@ -30,9 +30,11 @@ import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -247,7 +249,9 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
             // Set contacts sync for this account.
             ContentResolver.setIsSyncable(account, BloaProvider.AUTHORITY, 1);
             ContentResolver.setSyncAutomatically(account, BloaProvider.AUTHORITY, false);
-            ContentResolver.addPeriodicSync(account, BloaProvider.AUTHORITY, specific, 120);
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            int interval = prefs.getInt("pref_syncInterval", 120);
+            ContentResolver.addPeriodicSync(account, BloaProvider.AUTHORITY, specific, interval);
         }
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, token);
