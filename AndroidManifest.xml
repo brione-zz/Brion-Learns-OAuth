@@ -91,5 +91,6 @@
             android:excludeFromRecents="true"
             android:configChanges="orientation|keyboardHidden"
         />
+        <activity android:name=".syncadapter.SyncPreferenceActivity" />
     </application>
 </manifest>
