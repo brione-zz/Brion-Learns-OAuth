@@ -68,6 +68,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     // You'll need to create this or change the name of DefaultKeysProvider
     IKeysProvider mKeysProvider = new MyKeysProvider();
 
+    @SuppressWarnings("deprecation")
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

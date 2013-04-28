@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2013 Brion Noble Emde
+<!--
+     Copyright (C) 2013 Brion Noble Emde
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -14,76 +15,84 @@
      limitations under the License.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:orientation="vertical"
-    >
+    android:orientation="vertical" >
+
     <RelativeLayout
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        >
-        <CheckBox android:id="@+id/enable"
+        android:layout_height="wrap_content" >
+
+        <CheckBox
+            android:id="@+id/enable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
             android:layout_alignParentLeft="true"
-            android:checked="false"
-        />
-        <TextView android:id="@+id/user"
+            android:layout_alignParentTop="true"
+            android:checked="false" />
+
+        <TextView
+            android:id="@+id/user"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/enable"
+            android:layout_alignBaseline="@id/enable"
             android:layout_alignParentRight="true"
             android:layout_alignParentTop="true"
-            android:layout_alignBaseline="@id/enable"
             android:layout_gravity="center_vertical|center_horizontal"
+            android:layout_toRightOf="@id/enable"
             android:hint="@string/userhint"
-            android:textIsSelectable="false"
-        />
+            android:textIsSelectable="false" />
     </RelativeLayout>
-    <LinearLayout android:id="@+id/edit_group"
+
+    <LinearLayout
+        android:id="@+id/edit_group"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-    >
+        android:orientation="vertical" >
+
         <TextView
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:text="@string/label"
-        />
+            android:text="@string/label" />
+
         <RelativeLayout
-            android:orientation="horizontal"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-        >
-            <Button android:id="@+id/post"
+            android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/post"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/post"
-                android:enabled="false"
                 android:layout_alignParentRight="true"
-            />
-            <EditText android:id="@+id/editor"
+                android:enabled="false"
+                android:text="@string/post" />
+
+            <EditText
+                android:id="@+id/editor"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/tweet"
-                android:enabled="false"
                 android:layout_alignParentLeft="true"
                 android:layout_toLeftOf="@id/post"
-            />
+                android:enabled="false"
+                android:hint="@string/tweet" />
         </RelativeLayout>
-        <TextView android:id="@+id/last"
-            android:layout_height="wrap_content"
+
+        <TextView
+            android:id="@+id/last"
             android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
             android:hint="@string/userhint"
-            android:textIsSelectable="true"
-        />
+            android:textIsSelectable="true" />
     </LinearLayout>
+
     <fragment
-        android:name="com.eyebrowssoftware.bloa.fragments.UserTimelineFragment"
         android:id="@+id/list_fragment"
-        android:layout_weight="1"
-        android:layout_height="0dp"
+        android:name="com.eyebrowssoftware.bloa.activities.UserTimelineFragment"
         android:layout_width="match_parent"
-    />
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        tools:layout="@android:layout/simple_list_item_2" />
+
 </LinearLayout>

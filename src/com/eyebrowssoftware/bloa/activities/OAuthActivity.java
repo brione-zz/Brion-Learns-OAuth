@@ -30,17 +30,16 @@ import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.eyebrowssoftware.bloa.BloaApp;
@@ -62,6 +61,8 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
     private EditText mUserNameEditText;
     private Button mGoButton;
 
+    private ProgressBar mProgressBar;
+
 
     @Override
     public void onCreate(Bundle icicle) {
@@ -79,10 +80,13 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
             @Override
             public void onClick(View v) {
                 mUserNameForm.setVisibility(View.GONE);
+                mProgressBar.setVisibility(View.VISIBLE);
                 (new RetrieveRequestTokenTask()).execute(new Void[0]);
             }
 
         });
+
+        mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
 
         mProvider = new CommonsHttpOAuthProvider(
                 Constants.TWITTER_REQUEST_TOKEN_URL,

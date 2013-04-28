@@ -22,6 +22,7 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
 import android.app.Application;
+import android.webkit.CookieSyncManager;
 
 
 public class BloaApp extends Application {
@@ -47,5 +48,12 @@ public class BloaApp extends Application {
 
     public static void setKeysProvider(IKeysProvider provider) {
         sKeysProvider = provider;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        CookieSyncManager.createInstance(this.getApplicationContext());
+        CookieSyncManager.getInstance().startSync();
     }
 }

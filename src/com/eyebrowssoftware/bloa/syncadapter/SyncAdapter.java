@@ -78,12 +78,14 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private HttpClient mClient = BloaApp.getHttpClient();
     private final TimelineSelector TIMELINE_SELECTOR = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
     private OAuthConsumer mConsumer;
+    private AccountManager mAccountManager;
 
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
         Log.d(TAG, "Sync adapter constructor: " + (autoInitialize ? "Auto initialize" : "No initialize"));
         IKeysProvider keys = BloaApp.getKeysProvider();
         mConsumer = new CommonsHttpOAuthConsumer(keys.getKey1(), keys.getKey2());
+        mAccountManager = AccountManager.get(context);
     }
 
     @Override
@@ -92,30 +94,38 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         // to talk to our sample server.  If we don't have an AuthToken
         // yet, this could involve a round-trip to the server to request
         // and AuthToken.
-            AccountManager am = AccountManager.get(this.getContext());
-            String authtoken;
-            try {
-                syncResult.clear();
-                authtoken = am.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, NOTIFY_AUTH_FAILURE);
+        try {
+            syncResult.clear();
+            if (needsAuthToken()) {
+                String authtoken = mAccountManager.blockingGetAuthToken(account, Constants.AUTHTOKEN_TYPE, NOTIFY_AUTH_FAILURE);
                 if (authtoken == null) {
                     syncResult.stats.numAuthExceptions++;
                     throw new AuthenticatorException("No authtoken returned in sync adapter");
                 }
-                String token = am.getUserData(account, Constants.PARAM_USERNAME);
-                String secret = am.getUserData(account, Constants.PARAM_PASSWORD);
-                mConsumer.setTokenWithSecret(token, secret);
-                syncUserProfile(provider, syncResult);
-                syncUserTimeline(provider, syncResult);
-                postToUserTimeline(provider, syncResult);
-            } catch (OperationCanceledException e) {
-                e.printStackTrace();
-            } catch (AuthenticatorException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+                String token = mAccountManager.getUserData(account, Constants.PARAM_USERNAME);
+                String secret = mAccountManager.getUserData(account, Constants.PARAM_PASSWORD);
+                if (token != null && secret != null) {
+                    mConsumer.setTokenWithSecret(token, secret);
+                } else {
+                    syncResult.stats.numAuthExceptions++;
+                    throw new OperationCanceledException("No 'special' tokens in auth token user data");
+                }
             }
+            syncUserProfile(provider, syncResult);
+            syncUserTimeline(provider, syncResult);
+            postToUserTimeline(provider, syncResult);
+        } catch (OperationCanceledException e) {
+            e.printStackTrace();
+        } catch (AuthenticatorException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
+    private boolean needsAuthToken() {
+        return mConsumer.getToken() == null || mConsumer.getTokenSecret() == null;
+    }
     private void syncUserProfile(ContentProviderClient provider, SyncResult syncResult) {
         Log.i(TAG, "Sync adapter: onPerformSync");
 
