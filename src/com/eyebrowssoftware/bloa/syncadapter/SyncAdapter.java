@@ -76,12 +76,12 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     private static final String WHERE_POST = UserStatusRecord.IS_NEW + " NOTNULL";
 
     private HttpClient mClient = BloaApp.getHttpClient();
-    private final TimelineSelector mTimelineSelector = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
+    private final TimelineSelector TIMELINE_SELECTOR = new TimelineSelector(Constants.HOME_TIMELINE_URL_STRING);
     private OAuthConsumer mConsumer;
 
     public SyncAdapter(Context context, boolean autoInitialize) {
         super(context, autoInitialize);
-        Log.d(TAG, "Sync adapter constructor");
+        Log.d(TAG, "Sync adapter constructor: " + (autoInitialize ? "Auto initialize" : "No initialize"));
         IKeysProvider keys = BloaApp.getKeysProvider();
         mConsumer = new CommonsHttpOAuthConsumer(keys.getKey1(), keys.getKey2());
     }
@@ -172,18 +172,18 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
         JSONArray array = null;
         try {
             provider.delete(UserTimelineRecords.CONTENT_URI, null, null);
-            Uri sUri = Uri.parse(mTimelineSelector.url);
+            Uri sUri = Uri.parse(TIMELINE_SELECTOR.url);
             Uri.Builder builder = sUri.buildUpon();
-            if(mTimelineSelector.since_id != null) {
-                builder.appendQueryParameter("since_id", String.valueOf(mTimelineSelector.since_id));
-            } else if (mTimelineSelector.max_id != null) { // these are mutually exclusive
-                builder.appendQueryParameter("max_id", String.valueOf(mTimelineSelector.max_id));
+            if(TIMELINE_SELECTOR.since_id != null) {
+                builder.appendQueryParameter("since_id", String.valueOf(TIMELINE_SELECTOR.since_id));
+            } else if (TIMELINE_SELECTOR.max_id != null) { // these are mutually exclusive
+                builder.appendQueryParameter("max_id", String.valueOf(TIMELINE_SELECTOR.max_id));
             }
-            if(mTimelineSelector.count != null) {
-                builder.appendQueryParameter("count", String.valueOf((mTimelineSelector.count > 200) ? 200 : mTimelineSelector.count));
+            if(TIMELINE_SELECTOR.count != null) {
+                builder.appendQueryParameter("count", String.valueOf((TIMELINE_SELECTOR.count > 200) ? 200 : TIMELINE_SELECTOR.count));
             }
-            if(mTimelineSelector.page != null) {
-                builder.appendQueryParameter("page", String.valueOf(mTimelineSelector.page));
+            if(TIMELINE_SELECTOR.page != null) {
+                builder.appendQueryParameter("page", String.valueOf(TIMELINE_SELECTOR.page));
             }
             HttpGet get = new HttpGet(builder.build().toString());
             mConsumer.sign(get);
