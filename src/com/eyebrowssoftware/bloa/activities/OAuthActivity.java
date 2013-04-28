@@ -246,12 +246,7 @@ public class OAuthActivity extends AccountAuthenticatorActivity {
             specific.putString(Constants.PARAM_USERNAME, token);
             specific.putString(Constants.PARAM_PASSWORD, secret);
             AccountManager.get(this).addAccountExplicitly(account, secret, specific);
-            // Set contacts sync for this account.
             ContentResolver.setIsSyncable(account, BloaProvider.AUTHORITY, 1);
-            ContentResolver.setSyncAutomatically(account, BloaProvider.AUTHORITY, false);
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-            int interval = prefs.getInt("pref_syncInterval", 120);
-            ContentResolver.addPeriodicSync(account, BloaProvider.AUTHORITY, specific, interval);
         }
         final Intent intent = new Intent();
         intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, token);

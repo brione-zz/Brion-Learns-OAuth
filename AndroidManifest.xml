@@ -37,7 +37,7 @@
         <provider
             android:name=".data.BloaProvider"
             android:authorities="com.eyebrowssoftware.bloa"
-            android:exported="true"
+            android:exported="false"
         />
         <!-- The authenticator service -->
         <service
@@ -57,8 +57,7 @@
             android:name=".syncadapter.SyncService"
             android:exported="true">
             <intent-filter>
-                <action
-                    android:name="android.content.SyncAdapter" />
+                <action android:name="android.content.SyncAdapter" />
             </intent-filter>
             <meta-data
                 android:name="android.content.SyncAdapter"
@@ -87,10 +86,17 @@
                 <data android:scheme="bloa-app" android:host="twitt" />
             </intent-filter>
         </activity>
-        <activity android:name=".activities.MyWebActivity"
+        <activity
+            android:name=".activities.MyWebActivity"
             android:excludeFromRecents="true"
             android:configChanges="orientation|keyboardHidden"
         />
-        <activity android:name=".syncadapter.SyncPreferenceActivity" />
+        <activity
+            android:name=".syncadapter.SyncPreferenceActivity" >
+            <intent-filter>
+                <action android:name="com.eyebrowssoftware.bloa.syncadapter.SYNC_PREFERENCES"/>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

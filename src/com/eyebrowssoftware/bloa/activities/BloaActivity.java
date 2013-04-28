@@ -15,8 +15,6 @@
  */
 package com.eyebrowssoftware.bloa.activities;
 
-import java.io.IOException;
-
 import junit.framework.Assert;
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.commonshttp.CommonsHttpOAuthConsumer;
@@ -24,8 +22,6 @@ import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
-import android.accounts.AuthenticatorException;
-import android.accounts.OperationCanceledException;
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -89,12 +85,12 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
 
         mUserTextView = (TextView) this.findViewById(R.id.user);
         mLastTweetTextView = (TextView) this.findViewById(R.id.last);
-
+        AccountManager am = AccountManager.get(this);
         Account account = getAccount();
         if (account == null) {
-            AccountManager.get(this).addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, null);
+            am.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE, null, null, BloaActivity.this, BloaActivity.this, null);
         } else {
-            AccountManager.get(BloaActivity.this).getAuthToken(account, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
+            am.getAuthToken(account, Constants.AUTHTOKEN_TYPE, true, BloaActivity.this, null);
         }
         // Set up our cursor loader. It manages the cursors from now on
         getSupportLoaderManager().initLoader(Constants.BLOA_LOADER_ID, null, this);
@@ -109,7 +105,7 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
     private Account getAccount() {
         AccountManager am = AccountManager.get(this);
         Account[] accounts = am.getAccountsByType(Constants.ACCOUNT_TYPE);
-        Assert.assertTrue(accounts.length < 2); // There can only be one: Twitter
+        Assert.assertTrue(accounts.length <= 1); // There can only be one: Twitter
         return (accounts.length > 0) ? accounts[0] : null;
     }
 
@@ -127,6 +123,16 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
                 Assert.assertNotNull(getContentResolver().insert(UserStatusRecords.CONTENT_URI, values));
                 mEditor.setText(null);
             }
+        }
+    }
+
+    private void updateUI(String userName, String lastMessage) {
+        if (userName != null && lastMessage != null) {
+            mUserTextView.setText(userName);
+            mLastTweetTextView.setText(lastMessage);
+        } else {
+            mUserTextView.setText(getString(R.string.userhint));
+            mLastTweetTextView.setText(getString(R.string.userhint));
         }
     }
 
@@ -163,7 +169,9 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         }
     }
 
-
+    /**
+     * Cursor Loader Callbacks
+     */
     @Override
     public Loader<Cursor> onCreateLoader(int loaderId, Bundle savedValues) {
         // Create a CursorLoader that will take care of creating a cursor for the data
@@ -187,16 +195,10 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         updateUI(null, null);
     }
 
-    private void updateUI(String userName, String lastMessage) {
-        if (userName != null && lastMessage != null) {
-            mUserTextView.setText(userName);
-            mLastTweetTextView.setText(lastMessage);
-        } else {
-            mUserTextView.setText(getString(R.string.userhint));
-            mLastTweetTextView.setText(getString(R.string.userhint));
-        }
-    }
 
+    /**
+     * Option Menu
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
@@ -217,13 +219,17 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         case R.id.refresh_timeline:
             ContentResolver.requestSync(getAccount(), BloaProvider.AUTHORITY, new Bundle());
             return true;
+        case R.id.settings:
+            Intent i = new Intent("com.eyebrowssoftware.bloa.syncadapter.SYNC_PREFERENCES");
+            startActivity(i);
+            return true;
         default:
             return super.onOptionsItemSelected(item);
         }
     }
 
     /**
-     * This is theAccountManagerCallback. The future result is ready because we waited for it.
+     * AccountManagerCallback. The future result is ready because we waited for it.
      */
     @SuppressWarnings("deprecation")
     @Override
@@ -233,7 +239,6 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
         Log.d(TAG, "Got a future!");
         String token = null;
         String secret = null;
-        String type = null;
         if (futureResult.isCancelled()) {
             Log.d(TAG, "Login was canceled");
             return;
