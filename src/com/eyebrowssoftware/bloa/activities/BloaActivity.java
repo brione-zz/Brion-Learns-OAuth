@@ -165,7 +165,9 @@ public class BloaActivity extends FragmentActivity implements LoaderCallbacks<Cu
             if(mCB.isChecked()) {
                 // TODO: what does it mean to log in?
             } else {
-                // TODO: what does it mean to log out?
+                AccountManager.get(BloaActivity.this).invalidateAuthToken(Constants.AUTHTOKEN_TYPE, mConsumer.getTokenSecret());
+                mConsumer.setTokenWithSecret(null, null);
+                setUIState();
             }
         }
     }

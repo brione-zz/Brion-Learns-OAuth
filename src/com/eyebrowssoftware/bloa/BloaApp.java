@@ -54,6 +54,5 @@ public class BloaApp extends Application {
     public void onCreate() {
         super.onCreate();
         CookieSyncManager.createInstance(this.getApplicationContext());
-        CookieSyncManager.getInstance().startSync();
     }
 }

@@ -30,6 +30,7 @@ public class MyWebActivity extends FragmentActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        CookieSyncManager.getInstance().startSync();
     }
 
     protected void onPause() {
