@@ -3,9 +3,9 @@ package com.eyebrowssoftware.bloa.test;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.test.ActivityInstrumentationTestCase2;
-
 import com.eyebrowssoftware.bloa.Constants;
 import com.eyebrowssoftware.bloa.IKeysProvider;
+import com.eyebrowssoftware.bloa.MyKeysProvider;
 import com.eyebrowssoftware.bloa.activities.BloaActivity;
 
 public class BloaActivityInstrumentationTestCase2 extends ActivityInstrumentationTestCase2<BloaActivity> {
