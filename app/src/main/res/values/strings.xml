@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2013 Brion Noble Emde
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources>
+    <string name="app_name">BLOATweet</string>
+    <string name="oauth_name">Authenticating</string>
+    <string name="tweet">Enter your Message here</string>
+    <string name="label"><b>Type Something</b></string>
+    <string name="post"><b>Post</b></string>
+    <string name="userhint">Not logged in</string>
+    <string name="auth_progress_title">Authenticating&#8230;</string>
+    <string name="auth_progress_text">Fetching profile&#8230;</string>
+    <string name="timeline_progress_title">Timeline&#8230;</string>
+    <string name="timeline_progress_text">Fetching Home Timeline&#8230;</string>
+    <string name="tweet_progress_title">Sending&#8280;</string>
+    <string name="tweet_progress_text">Posting message</string>
+    <string name="tweet_empty">You have to enter something</string>
+    <string name="tweet_error">There was some kind of problem!</string>
+    <string name="bad_value">Bad Value</string>
+    <string name="empty">Nothing to show</string>
+    <string name="refresh_timeline">Refresh Timeline</string>
+    <string name="authenticator_label">BLOA Authenticator</string>
+    <!-- Login stuff we hope to get rid of -->
+    <string name="login_activity_username_label">Username</string>
+    <string name="login_activity_password_label">Password</string>
+    <string name="login_activity_ok_button">Sign in</string>
+    <string name="ui_activity_title">Sign-in</string>
+    <string name="ui_activity_authenticating">Authenticating\u2026</string>
+    <string name="login_activity_loginfail_text_both">The username or password isn\'t valid. A Sample SyncAdapter account is required. Please try again. </string>
+    <string name="login_activity_loginfail_text_pwonly">You entered the wrong password or your account has changed. Please re-enter your password.</string>
+    <string name="login_activity_loginfail_text_pwmissing">Type the password for this account.</string>
+    <string name="login_activity_newaccount_text">Sign in to your Sample SyncAdapter account. </string>
+
+    <!-- Interim strings -->
+    <string name="bloa_tweet_authenticator_label">BLOATweet Authenticator</string>
+    <string name="account_created_toast_format">Account created: %1$s</string>
+    <string name="account_canceled_toast_format">Account canceled: %1$s</string>
+    <string name="account_retry">Authentication failed. Retry by re-opening app.</string>
+    <string name="posted">Message posted</string>
+
+    <!-- Oauth Activity User Name -->
+    <string name="user_name_hint">User</string>
+    <string name="go_button_text">OK</string>
+    <string name="no_custom_name">No custom account name for you %1$s</string>
+
+    <!-- Sync Preferences -->
+    <string name="settings_menu_item">Settings</string>
+
+    <string name="pref_syncInterval">Sync Interval</string>
+
+    <string name="pref_syncInterval_Off">Sync Off</string>
+    <string name="pref_syncInterval_1">1 minute</string>
+    <string name="pref_syncInterval_2">2 minutes</string>
+    <string name="pref_syncInterval_3">3 minutes</string>
+    <string name="pref_syncInterval_4">4 minutes</string>
+    <string name="pref_syncInterval_5">5 minutes</string>
+
+    <string-array name="pref_syncIntervalNames">
+        <item>@string/pref_syncInterval_Off</item>
+        <item>@string/pref_syncInterval_1</item>
+        <item>@string/pref_syncInterval_2</item>
+        <item>@string/pref_syncInterval_3</item>
+        <item>@string/pref_syncInterval_4</item>
+        <item>@string/pref_syncInterval_5</item>
+    </string-array>
+
+    <string name="interval_off">-1</string>
+    <string name="interval_1">60</string>
+    <string name="interval_2">120</string>
+    <string name="interval_3">180</string>
+    <string name="interval_4">240</string>
+    <string name="interval_5">300</string>
+
+    <string name="pref_syncIntervalDefault">@string/interval_3</string>
+
+    <string-array name="pref_syncIntervalValues">
+        <item>@string/interval_off</item>
+        <item>@string/interval_1</item>
+        <item>@string/interval_2</item>
+        <item>@string/interval_3</item>
+        <item>@string/interval_4</item>
+        <item>@string/interval_5</item>
+    </string-array>
+
+    <string name="unknown">Unknown</string>
+
+</resources>
