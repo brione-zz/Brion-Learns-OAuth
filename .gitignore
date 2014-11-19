@@ -8,7 +8,7 @@ src/com/eyebrowssoftware/bloa/MyKeysProvider.java
 tests/BLOATestTest/src/com/eyebrowssoftware/bloa/test/MyKeysProvider.java
 
 # Built application files
-/*/build/
+build
  
 # Crashlytics configuations
 com_crashlytics_export_strings.xml
